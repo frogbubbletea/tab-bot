@@ -41,7 +41,6 @@ async def update_quotas():
 
 # On ready event
 # Display bot guilds
-# Prepare a queue for each guild the bot is in
 @bot.event
 async def on_ready():
     for guild in bot.guilds:
