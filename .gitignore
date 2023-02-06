@@ -1,0 +1,8 @@
+# ignore pycache
+__pycache__/
+# ignore environment file
+.env
+# ignore .replit file
+.replit
+# ignore libopus file
+libopus.so.0.8.0
