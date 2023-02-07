@@ -38,6 +38,9 @@ bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(na
 async def update_quotas():
     update_time = course_info.download_quotas()
     print(update_time)
+    # Send update confirmation message to quota-updates channel
+    update_channel = await bot.fetch_channel(1072569015089774622)
+    await update_channel.send(f"🔃 Updated! {update_time}")
 
 # On ready event
 # Display bot guilds
