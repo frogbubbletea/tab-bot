@@ -29,7 +29,8 @@ semester_code = 2230
     #         section2: [],
     #         section3: []
     #     }
-    # }
+    # },
+    # time: ""
 # }
 
 def update_time():

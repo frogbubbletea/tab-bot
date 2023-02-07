@@ -69,7 +69,7 @@ async def test(interaction: discord.Interaction) -> None:
 async def quota(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
-    embed_quota = quotas_operations.compose_message(course_code.upper())
+    embed_quota = quotas_operations.compose_message(course_code.replace(" ", "").upper())
     
     if embed_quota == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
