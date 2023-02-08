@@ -58,11 +58,11 @@ def compose_message(course_code):
     embed_quota = discord.Embed(title=f"🍓 {course_dict['title']}",
         color=config.color_success)
     
-    quota_field = f"```\n{'Section':<12}{'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+    quota_field = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
     for key, value in course_dict['sections'].items():
-        quota_field += f"{trim_section(key):<12}"
+        quota_field += f"{trim_section(key):<8}| "
         for i in range(4, 8):
-            quota_field += f"{value[i]:<6}"
+            quota_field += '{:<6}'.format(value[i].split("\n", 1)[0])
         quota_field += "\n"
     quota_field += "```"
 
