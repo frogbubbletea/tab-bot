@@ -33,21 +33,23 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # define bot
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Portal 3"), help_command=None)
+bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Taiko no Tatsujin"), help_command=None)
 
 # Helper function to check if course/section/quota changed
 def check_diffs():
     # Open quotas files
     new_quotas = quotas_operations.open_quotas()
     old_quotas = open('quotas_old.json', encoding='utf-8')
-    old_quotas = json.load(old_quotas)
+    try:
+        old_quotas = json.load(old_quotas)
+    except:
+        return
 
     # No comparison if current quotas file or last quotas file is corrupted
     if (not quotas_operations.check_quotas_validity) or (old_quotas == {}):
         return
     
     for key, value in new_quotas.items():
-        print(key)  # DEBUG PRINT
         # Skip 'time' entry
         if key == 'time':
             continue
