@@ -6,5 +6,6 @@ __pycache__/
 .replit
 # ignore libopus file
 libopus.so.0.8.0
-# ignore quotas file
+# ignore quotas files
 quotas.json
+quotas_old.json

@@ -27,9 +27,12 @@ def trim_section(section_code):
 # If quota searching is interrupted by network issues, quotas file is incomplete and does not contain the update time
 def check_quotas_validity():
     quotas = open_quotas()
-    if 'time' in quotas:
-        return True
-    else:
+    try:
+        if 'time' in quotas:
+            return True
+        else:
+            return False
+    except TypeError:  # Error raised if quotas file is corrupted
         return False
 
 def compose_message(course_code):

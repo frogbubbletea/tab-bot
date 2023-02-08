@@ -6,6 +6,8 @@ import os
 import json
 from datetime import datetime
 
+from quotas_operations import open_quotas, check_quotas_validity
+
 # Change working directory to wherever this is in
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -97,6 +99,15 @@ def download_quotas():
     
     quotas['time'] = update_time()
     
+    # Move quotas of last minute to another file
+    oldfile = open('quotas_old.json', 'w', encoding='utf-8')
+    old_quotas = open_quotas()
+    if check_quotas_validity():
+        json.dump(old_quotas, oldfile, indent = 4)
+    # Make old quotas file empty if quota file is corrupted
+    else:
+        json.dump({}, oldfile, indent = 4)
+
     # Save quotas to json file
     outfile = open('quotas.json', 'w', encoding='utf-8')
     json.dump(quotas, outfile, indent = 4)

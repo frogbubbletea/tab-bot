@@ -6,10 +6,12 @@ from discord.ext import commands, tasks
 import os
 import asyncio
 from dotenv import load_dotenv
+import json
 
 import config
 import course_info
 import quotas_operations
+import subject_channels
 
 # Uncomment when running on Windows
 # Fixes runtime error: asyncio.run() cannot be called from a running event loop
@@ -33,18 +35,58 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Portal 3"), help_command=None)
 
+# Helper function to check if course/section/quota changed
+def check_diffs():
+    # Open quotas files
+    new_quotas = quotas_operations.open_quotas()
+    old_quotas = open('quotas_old.json', encoding='utf-8')
+    old_quotas = json.load(old_quotas)
+
+    # No comparison if current quotas file or last quotas file is corrupted
+    if (not quotas_operations.check_quotas_validity) or (old_quotas == {}):
+        return
+    
+    for key, value in new_quotas.items():
+        print(key)  # DEBUG PRINT
+        # Skip 'time' entry
+        if key == 'time':
+            continue
+        # New course
+        if key not in old_quotas:
+            channels.get(key[0: 4], channels['other']).send(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+            # DEBUG PRINT
+            print(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+        else:
+            for key2, value2 in value['sections'].items():
+                # New section
+                if key2 not in old_quotas[key]['sections']:
+                    channels.get(key[0: 4], channels['other']).send(f"🍅 New section!\n{value.get('title', 'Error')} {key2}\nQuota {value2[4]}")
+                    # DEBUG PRINT
+                    print(f"🍅 New section!\n{value.get('title', 'Error')} {key2}\nQuota {value2[4]}")
+                # Quota change
+                elif value2[4] != value['sections'][key2][4]:
+                    channels.get(key[0: 4], channels['other']).send(f"🍋 Quota changed!\n{value.get('title', 'Error')} {key2}\n{value['sections'][key2][4]}")
+                    # DEBUG PRINT
+                    print(f"🍋 Quota changed!\n{value.get('title', 'Error')} {key2}\n{value['sections'][key2][4]}")
+
 # Update quotas every minute
 @tasks.loop(seconds=60.0)
 async def update_quotas():
     start_time = course_info.update_time()
     update_time = course_info.download_quotas()
     print(f"{start_time} - {update_time}: {update_quotas.current_loop}")
+
     # Send update confirmation message to quota-updates channel
     update_channel = await bot.fetch_channel(1072569015089774622)
     await update_channel.send(f"🔃 Updated! {start_time} - {update_time}: {update_quotas.current_loop}")
 
+    # Start checking diffs after first loop run
+    if update_quotas.current_loop > 0:
+        check_diffs()
+
 # On ready event
 # Display bot guilds
+channels = None
 @bot.event
 async def on_ready():
     for guild in bot.guilds:
@@ -52,6 +94,9 @@ async def on_ready():
             f'{bot.user} is connected to the following guild(s):\n'
             f'{guild.name}(id: {guild.id})'
         )
+    # Prepare list of subject channels
+    global channels
+    channels = await subject_channels.find_channels(bot)
     await update_quotas.start()
 
 @bot.event
