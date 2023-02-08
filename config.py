@@ -1,3 +1,5 @@
+import datetime
+
 # Embed colors
 color_success = 0xa6e3a1	
 color_failure = 0xf38ba8

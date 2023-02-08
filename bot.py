@@ -7,6 +7,7 @@ import os
 import asyncio
 from dotenv import load_dotenv
 import json
+import datetime
 
 import config
 import course_info
@@ -35,8 +36,11 @@ intents = discord.Intents.default()
 intents.message_content = True
 bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Taiko no Tatsujin"), help_command=None)
 
+# Dict containing all subject channels
+channels = None
+
 # Helper function to check if course/section/quota changed
-def check_diffs():
+async def check_diffs():
     # Open quotas files
     new_quotas = quotas_operations.open_quotas()
     old_quotas = open('quotas_old.json', encoding='utf-8')
@@ -55,28 +59,27 @@ def check_diffs():
             continue
         # New course
         if key not in old_quotas:
-            channels.get(key[0: 4], channels['other']).send(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
-            # DEBUG PRINT
-            print(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+            await channels.get(key[0: 4], channels['other']).send(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
         else:
             for key2, value2 in value['sections'].items():
                 # New section
                 if key2 not in old_quotas[key]['sections']:
-                    channels.get(key[0: 4], channels['other']).send(f"🍅 New section!\n{value.get('title', 'Error')} {key2}\nQuota {value2[4]}")
-                    # DEBUG PRINT
-                    print(f"🍅 New section!\n{value.get('title', 'Error')} {key2}\nQuota {value2[4]}")
+                    quota_new = value2[4].split("\n", 1)[0]
+                    await channels.get(key[0: 4], channels['other']).send(f"🍅 New section!\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
                 # Quota change
-                elif value2[4] != value['sections'][key2][4]:
-                    channels.get(key[0: 4], channels['other']).send(f"🍋 Quota changed!\n{value.get('title', 'Error')} {key2}\n{value['sections'][key2][4]}")
-                    # DEBUG PRINT
-                    print(f"🍋 Quota changed!\n{value.get('title', 'Error')} {key2}\n{value['sections'][key2][4]}")
+                elif value2[4] != old_quotas[key]['sections'][key2][4]:  # DEBUG: Compare waitlist instead of quota 
+                    quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
+                    quota_new = value2[4].split("\n", 1)[0]
+                    await channels.get(key[0: 4], channels['other']).send(f"🍋 Quota changed!\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
 
-# Update quotas every minute
-@tasks.loop(seconds=60.0)
+# Update quotas every 15 minutes, at roughly the same time quotas on the website is updated (03, 18, 33, 48)
+@tasks.loop(seconds=900.0)
 async def update_quotas():
+
     start_time = course_info.update_time()
+    print(f"Update started: {start_time}")
     update_time = course_info.download_quotas()
-    print(f"{start_time} - {update_time}: {update_quotas.current_loop}")
+    print(f"Update finished: {update_time}: {update_quotas.current_loop}")
 
     # Send update confirmation message to quota-updates channel
     update_channel = await bot.fetch_channel(1072569015089774622)
@@ -84,11 +87,10 @@ async def update_quotas():
 
     # Start checking diffs after first loop run
     if update_quotas.current_loop > 0:
-        check_diffs()
+        await check_diffs()
 
 # On ready event
 # Display bot guilds
-channels = None
 @bot.event
 async def on_ready():
     for guild in bot.guilds:
@@ -99,6 +101,8 @@ async def on_ready():
     # Prepare list of subject channels
     global channels
     channels = await subject_channels.find_channels(bot)
+    print("Channels loaded!")
+
     await update_quotas.start()
 
 @bot.event

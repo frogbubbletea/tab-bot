@@ -42,7 +42,7 @@ def update_time():
 
 def download_quotas():
     url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/"
-    page = requests.get(url, timeout=10)
+    page = requests.get(url)
 
     soup = bs4.BeautifulSoup(page.content, "html.parser")
     
@@ -53,7 +53,7 @@ def download_quotas():
     for letter in letters:
         sub_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{letter.get_text()}"
 
-        sub_page = requests.get(sub_url, timeout=10)
+        sub_page = requests.get(sub_url)
 
         sub_soup = bs4.BeautifulSoup(sub_page.content, "html.parser")
 
