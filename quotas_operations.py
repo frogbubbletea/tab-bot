@@ -13,9 +13,12 @@ dname = os.path.dirname(abspath)
 os.chdir(dname)
 
 def open_quotas():
-    quotas = open('quotas.json', encoding='utf-8')
-    quotas = json.load(quotas)
-    return quotas
+    try:
+        quotas = open('quotas.json', encoding='utf-8')
+        quotas = json.load(quotas)
+        return quotas
+    except:
+        return False
 
 def trim_section(section_code):
     section_trim = re.findall("[A-Z]+[0-9]+", section_code)[0]
@@ -33,7 +36,7 @@ def compose_message(course_code):
     quotas = open_quotas()
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if (quotas == False) or (not check_quotas_validity()):
         embed_quota_unavailable = discord.Embed(title=f"⚠️ Quotas are unavailable at the moment!",
             description="Try again in a minute.",
             color=config.color_failure)
