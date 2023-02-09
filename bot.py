@@ -67,7 +67,7 @@ async def check_diffs():
                     quota_new = value2[4].split("\n", 1)[0]
                     await channels.get(key[0: 4], channels['other']).send(f"🍅 New section!\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
                 # Quota change
-                elif value2[4] != old_quotas[key]['sections'][key2][4]:  # DEBUG: Compare waitlist instead of quota 
+                elif value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:  # DEBUG: Compare waitlist instead of quota 
                     quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
                     quota_new = value2[4].split("\n", 1)[0]
                     await channels.get(key[0: 4], channels['other']).send(f"🍋 Quota changed!\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
