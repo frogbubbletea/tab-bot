@@ -134,22 +134,37 @@ async def check_diffs(new_quotas=None, old_quotas=None):
             continue
         # New course
         if key not in old_quotas:
-            await channels.get(key[0: 4], channels['other']).send(f"🥑 New course!\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+            await channels.get(key[0: 4], channels['other']).send(f"🥑 **New course!**\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
             changed = True
         else:
             for key2, value2 in value['sections'].items():
                 # New section
                 if key2 not in old_quotas[key]['sections']:
                     quota_new = value2[4].split("\n", 1)[0]
-                    await channels.get(key[0: 4], channels['other']).send(f"🍅 New section!\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
+                    await channels.get(key[0: 4], channels['other']).send(f"🍅 **New section!**\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
                     changed = True
                 # Quota change
-                elif value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:  # DEBUG: Compare waitlist instead of quota 
+                elif value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:  
                     quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
                     quota_new = value2[4].split("\n", 1)[0]
-                    await channels.get(key[0: 4], channels['other']).send(f"🍋 Quota changed!\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
+                    await channels.get(key[0: 4], channels['other']).send(f"🍋 **Quota changed!**\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
                     changed = True
-        
+    
+    for key3, value3 in old_quotas.items():
+        # Skip "time" entry
+        if key3 == "time":
+            continue
+        # Deleted course
+        if key3 not in new_quotas:
+            await channels.get(key3[0: 4], channels['other']).send(f"☕ **Course deleted!**\n{value3.get('title', 'Error')}\n{len(value3['sections'])} sections")
+            changed = True
+        else:
+            for key4, value4 in value3['sections'].items():
+                # Deleted section
+                if key4 not in new_quotas[key3]['sections']:
+                    await channels.get(key3[0: 4], channels['other']).send(f"🍹 **Section deleted!**\n{value3.get('title', 'Error')}: {key4}")
+                    changed = True
+
     return changed
 
 async def download_quotas(current_loop):
