@@ -120,6 +120,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
         try:
             old_quotas = json.load(old_quotas)
         except:
+            print("Old quotas file corrupted! Restart the bot.")
             return
 
     # No comparison if current quotas file or last quotas file is corrupted
