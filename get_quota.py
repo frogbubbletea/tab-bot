@@ -27,7 +27,7 @@ os.chdir(dname)
 semester_code = 2230
 
 def trim_section(section_code):
-    section_trim = re.findall("[A-Z]+[0-9]+", section_code)[0]
+    section_trim = re.findall("[A-Z]+[0-9]+[A-Z]*", section_code)[0]
     return section_trim
 
 def update_time():
