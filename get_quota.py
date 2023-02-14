@@ -169,11 +169,15 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
 async def download_quotas(current_loop):
     url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/"
-    page = requests.get(url)
-
-    soup = bs4.BeautifulSoup(page.content, "html.parser")
     
-    letters = soup.select('.depts')[0]
+    try:
+        page = requests.get(url)
+
+        soup = bs4.BeautifulSoup(page.content, "html.parser")
+    
+        letters = soup.select('.depts')[0]
+    except:
+        return update_time()
 
     quotas = {}
 
