@@ -27,7 +27,7 @@ os.chdir(dname)
 semester_code = 2230
 
 def trim_section(section_code):
-    section_trim = re.findall("[A-Z]+[0-9]+[A-Z]*", section_code)[0]
+    section_trim = re.findall("[A-Z]+[0-9]*[A-Z]*", section_code)[0]
     return section_trim
 
 def update_time():
@@ -124,7 +124,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
             return
 
     # No comparison if current quotas file or last quotas file is corrupted
-    if (not check_quotas_validity()) or (old_quotas == {}):
+    if (not check_quotas_validity()) or (old_quotas == {}) or ('time' not in new_quotas):
         return
     
     changed = False
