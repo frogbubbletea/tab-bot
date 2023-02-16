@@ -184,7 +184,11 @@ async def download_quotas(current_loop):
     for letter in letters:
         sub_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{letter.get_text()}"
 
-        sub_page = requests.get(sub_url)
+        try:
+            sub_page = requests.get(sub_url, timeout=10)
+        except:
+            print("Timed out!")
+            return update_time()
 
         sub_soup = bs4.BeautifulSoup(sub_page.content, "html.parser")
 
