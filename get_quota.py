@@ -102,10 +102,6 @@ def compose_message(course_code):
 
     embed_quota.add_field(name="🌸 Sections", value=quota_field, inline=False)
 
-    # Add warning message
-    embed_quota.add_field(name="🌸 Tab may become unresponsive while updating quotas!",
-        value="If your command failed, try again after a few seconds!")
-
     embed_quota.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
 
     return embed_quota
