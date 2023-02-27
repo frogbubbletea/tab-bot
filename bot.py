@@ -35,7 +35,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # define bot
 intents = discord.Intents.default()
 intents.message_content = True
-bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Taiko no Tatsujin"), help_command=None)
+bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Doki Doki Literature Club!"), help_command=None)
 
 # Helper function to check if course/section/quota changed
 # async def check_diffs():
@@ -111,26 +111,27 @@ async def on_guild_join(guild):
         f'{guild.name}(id: {guild.id})'
     )
 
+# Commands have been moved to Hill!
 # Slash commands start
 # "test" command
 # Tests bot status
-@bot.tree.command(description="Tests bot status", guilds=bot.guilds)
-async def test(interaction: discord.Interaction) -> None:
-    await interaction.response.send_message("meow")
+# @bot.tree.command(description="Tests bot status", guilds=bot.guilds)
+# async def test(interaction: discord.Interaction) -> None:
+#     await interaction.response.send_message("meow")
 
-@bot.tree.command(description="Get quota information for a course!", guilds=bot.guilds)
-async def quota(interaction: discord.Interaction, course_code: str) -> None:
-    await interaction.response.defer(thinking=True)
+# @bot.tree.command(description="Get quota information for a course!", guilds=bot.guilds)
+# async def quota(interaction: discord.Interaction, course_code: str) -> None:
+#     await interaction.response.defer(thinking=True)
 
-    embed_quota = get_quota.compose_message(course_code.replace(" ", "").upper())
+#     embed_quota = get_quota.compose_message(course_code.replace(" ", "").upper())
     
-    if embed_quota == "key":
-        await interaction.edit_original_response(content="⚠️ Check your course code!")
-    else:
-        try:
-            await interaction.edit_original_response(embed=embed_quota)
-        except:
-            await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
+#     if embed_quota == "key":
+#         await interaction.edit_original_response(content="⚠️ Check your course code!")
+#     else:
+#         try:
+#             await interaction.edit_original_response(embed=embed_quota)
+#         except:
+#             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
 # Slash commands end
 
 # Text commands start

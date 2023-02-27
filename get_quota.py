@@ -89,7 +89,7 @@ def compose_message(course_code):
             return "key"
     
     # Compose list
-    embed_quota = discord.Embed(title=f"🍓 {course_dict['title']}",
+    embed_quota = discord.Embed(title=f"{course_dict['title']}",
         color=config.color_success)
     
     quota_field = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
