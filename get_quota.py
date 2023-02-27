@@ -140,6 +140,85 @@ def compose_info(course_code):
 
     return embed_info
 
+# Compose message of course sections, instructors, schedules for "sections" command
+def compose_sections(course_code):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if (quotas == False) or (not check_quotas_validity()):
+        embed_info_unavailable = discord.Embed(title=f"⚠️ Course data is unavailable at the moment!",
+                                               description="Try again in a minute.",
+                                               color=config.color_failure)
+        return embed_info_unavailable
+    
+    # Check if course code is valid
+    try:
+        course_dict = quotas[course_code]
+    except KeyError:
+        return "key"
+    else:
+        if course_code == "time":
+            return "key"
+    
+    embed_sections = discord.Embed(title=f"{course_dict['title']}",
+                                   color=config.color_success)
+    
+    for key, value in course_dict['sections'].items():
+        section_id = key
+        section_field = "```\n"
+
+        time_list = value[1].split("\n\n\n")
+        venue_list = value[2].split("\n\n\n")
+        instructor_list = value[3].split("\n\n\n")
+
+        # Make all strings single-line
+        time_list = [t.replace('\n', ', ') for t in time_list]
+        venue_list = [t.replace('\n', ', ') for t in venue_list]
+        instructor_list = [t.replace('\n', ', ') for t in instructor_list]
+
+        # Add strings to field
+        # Add time string
+        # for idx, time in enumerate(time_list):
+        #     if idx == 0:
+        #         section_field += f"{'Time':<6}| {time}\n"
+        #     else:
+        #         section_field += f"{'|':>7} {time}\n"
+
+        # section_field += "\n"
+
+        # # Add venue string
+        # for idx2, venue in enumerate(venue_list):
+        #     if idx2 == 0:
+        #         section_field += f"{'Venue':<6}| {venue}\n"
+        #     else:
+        #         section_field += f"{'|':>7} {venue}\n"
+
+        # section_field += "\n"
+
+        # # Add instructor string
+        # for idx3, instructor in enumerate(instructor_list):
+        #     if idx3 == 0:
+        #         section_field += f"{'By':<6}| {instructor}\n"
+        #     else:
+        #         section_field += f"{'|':>7} {instructor}\n"
+
+        # Add strings row by row
+        for i in range(len(time_list)):
+            section_field += f"{'Time':<6}| {time_list[i]}\n"
+            section_field += f"{'Venue':<6}| {venue_list[i]}\n"
+            section_field += f"{'By':<6}| {instructor_list[i]}\n"
+            section_field += "\n"
+
+        section_field += "```"
+        embed_sections.add_field(name=f"🍊 {key}",
+                                 value=section_field,
+                                 inline=False)
+        
+    embed_sections.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    embed_sections.set_author(name="🍊 Sections of")
+
+    return embed_sections
+
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):
     # Open quotas files

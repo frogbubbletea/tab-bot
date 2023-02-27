@@ -82,6 +82,22 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(embed=embed_info)
         except:
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
+
+# "sections" command
+# Lists sections of a course and their times, venues and instructors
+@bot.tree.command(description="Get sections of a course!", guilds=bot.guilds)
+async def sections(interaction: discord.Interaction, course_code: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    embed_sections = get_quota.compose_sections(course_code.replace(" ", "").upper())
+
+    if embed_sections == "key":
+        await interaction.edit_original_response(content="⚠️ Check your course code!")
+    else:
+        try:
+            await interaction.edit_original_response(embed=embed_sections)
+        except:
+            await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 # Slash commands end
 
 # Text commands start
