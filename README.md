@@ -4,7 +4,7 @@
 ## 🥁 Tab
 Tab searches the servers of UST to get course data and look for quota changes!
 
-- Tab sends notifications to a Discord server when changes are recorded!
+- Tab [se](https://youtu.be/FXsGCieXm1E)nds notifications to a Discord server when changes are recorded!
 - Updates every 1.5 minutes to catch changes as quickly as possible!
 
 ## 🍦 Hill
