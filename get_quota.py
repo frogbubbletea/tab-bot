@@ -252,14 +252,44 @@ async def download_quotas(current_loop):
             
             section_dict = {}
             course_sections = course.select(".sections")[0]
-            course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd"])
+            course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
 
-            for section in course_sections:
+            for idx, section in enumerate(course_sections):
+                # Append extra section times/instructor information to section entry (1/2)
+                if section['class'][0] in ["secteven", "sectodd"]:
+                    continue
+
                 section_data = section.select("td")
                 section_cols = []
                 for col in section_data:
                     section_cols.append(col.get_text("\n"))
+                
+                # Append extra section times/instructor information to section entry (2/2)
+                # try:
+                #     next_section = course_sections[idx + 1]
+                #     if next_section['class'] in ["secteven", "sectodd"]:
+                #         extra_data = next_section.select("td")
+
+                #         for idx2, datum in enumerate(extra_data):
+                #             section_cols[idx2 + 1] += f"\n{datum}"
+                # except IndexError:
+                #     pass
+                    
                 section_dict[section_cols[0]] = section_cols
+
+                try:
+                    next = 1
+                    while course_sections[idx + next]['class'][0] in ["secteven", "sectodd"]:
+                        next_section = course_sections[idx + next]
+                        if next_section['class'][0] in ["secteven", "sectodd"]:
+                            extra_data = next_section.select("td")
+
+                            for idx2, datum in enumerate(extra_data):
+                                section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n")
+                        
+                        next += 1
+                except IndexError:
+                    pass
             
             # Add data to dictionary for course
             course_dict['title'] = course_title
