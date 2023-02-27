@@ -100,11 +100,45 @@ def compose_message(course_code):
         quota_field += "\n"
     quota_field += "```"
 
-    embed_quota.add_field(name="🌸 Sections", value=quota_field, inline=False)
+    embed_quota.add_field(name="🍊 Sections", value=quota_field, inline=False)
 
     embed_quota.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    embed_quota.set_author(name="🍊 Quotas of")
 
     return embed_quota
+
+# Compose message of course info for "info" command
+def compose_info(course_code):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if (quotas == False) or (not check_quotas_validity()):
+        embed_info_unavailable = discord.Embed(title=f"⚠️ Course info is unavailable at the moment!",
+                                               description="Try again in a minute.",
+                                               color=config.color_failure)
+        return embed_info_unavailable
+    
+    # Check if course code is valid
+    try:
+        course_dict = quotas[course_code]
+    except KeyError:
+        return "key"
+    else:
+        if course_code == "time":
+            return "key"
+    
+    embed_info = discord.Embed(title=f"{course_dict['title']}",
+                               color=config.color_success)
+    
+    for key, value in course_dict['info'].items():
+        key = key.capitalize()
+        key = key.replace("\n", " ")
+        embed_info.add_field(name=f"🍊 {key}", value=value, inline=False)
+    
+    embed_info.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    embed_info.set_author(name="🍊 Information for")
+
+    return embed_info
 
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):
@@ -198,18 +232,23 @@ async def download_quotas(current_loop):
             course_code = course.select(".courseanchor > a")[0]["name"]
             
             # No more course info im lazy
-            # course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
-            # course_info_rows = course_info.select('tr')
-            # course_headings = []
-            # course_datas = []
-            # for row in course_info_rows:
-            #     heading = row.select('th')[0]
-            #     heading = heading.get_text("\n")
-            #     print(heading)
-            #     course_headings.append(heading)
-            #     data = row.select('td')[0]
-            #     data = data.get_text("\n")
-            #     course_datas.append(data)
+            # Course info start
+            course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
+            course_info_rows = course_info.select('tr')
+            info_dict = {}
+
+            for row in course_info_rows:
+                try:
+                    heading = row.find('th')
+                    heading = heading.get_text("\n")
+
+                    data = row.select('td')[0]
+                    data = data.get_text("\n")
+
+                    info_dict[heading] = data
+                except:
+                    continue
+            # Course info end
             
             section_dict = {}
             course_sections = course.select(".sections")[0]
@@ -225,6 +264,7 @@ async def download_quotas(current_loop):
             # Add data to dictionary for course
             course_dict['title'] = course_title
             course_dict['sections'] = section_dict
+            course_dict['info'] = info_dict
 
             quotas[course_code] = course_dict
     

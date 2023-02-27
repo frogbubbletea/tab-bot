@@ -51,7 +51,9 @@ async def on_guild_join(guild):
     )
 
 # Slash commands start
-@bot.tree.command(description="Get quota information for a course!", guilds=bot.guilds)
+# "quota" command
+# Lists quotas of all sections of a course
+@bot.tree.command(description="Get quotas for a course!", guilds=bot.guilds)
 async def quota(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -64,6 +66,22 @@ async def quota(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(embed=embed_quota)
         except:
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
+
+# "info" command
+# Shows course info
+@bot.tree.command(description="Get the information of a course!", guilds=bot.guilds)
+async def info(interaction: discord.Interaction, course_code: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    embed_info = get_quota.compose_info(course_code.replace(" ", "").upper())
+
+    if embed_info == "key":
+        await interaction.edit_original_response(content="⚠️ Check your course code!")
+    else:
+        try:
+            await interaction.edit_original_response(embed=embed_info)
+        except:
+            await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
 # Slash commands end
 
 # Text commands start
