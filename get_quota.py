@@ -81,7 +81,7 @@ def find_max_page(dict, page_size):
     return max_page
 
 # Compose message of course quotas for "quota" command
-def compose_message(course_code):
+def compose_message(course_code, page=0):
     quotas = open_quotas()
 
     # Check if quotas file is available
@@ -100,12 +100,33 @@ def compose_message(course_code):
         if course_code == "time":
             return "key"
     
+    # Calculate max page index
+    page_size = 10
+    max_page = find_max_page(course_dict['sections'], page_size)
+
+    # Send error message if there is no sections (highly unlikely)
+    if max_page == -1:
+        return "no_sections"
+
+    # Check if page number is valid
+    if page < 0:
+        return "p0"
+    elif page > max_page:
+        return "pmax"
+
+    # Cut out one page of data
+    try:
+        sections_paged = list(course_dict['sections'].items())[page_size * page: page_size * (page + 1)]
+    except IndexError:
+        sections_paged = list(course_dict['sections'].items())[page_size * page: ]
+
     # Compose list
     embed_quota = discord.Embed(title=f"{course_dict['title']}",
         color=config.color_success)
     
     quota_field = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
-    for key, value in course_dict['sections'].items():
+
+    for key, value in sections_paged:
         quota_field += f"{trim_section(key):<8}| "
         for i in range(4, 8):
             quota_field += '{:<6}'.format(value[i].split("\n", 1)[0])
@@ -114,7 +135,7 @@ def compose_message(course_code):
 
     embed_quota.add_field(name="🍊 Sections", value=quota_field, inline=False)
 
-    embed_quota.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    embed_quota.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated:\n{quotas['time']}")
     embed_quota.set_author(name="🍊 Quotas of")
 
     return embed_quota

@@ -52,19 +52,58 @@ async def on_guild_join(guild):
 
 # Slash commands start
 # "quota" command
+# Compose page flip buttons
+class QuotaPage(discord.ui.View):
+    def __init__(self, *, timeout=180, course_code="", page=0):
+        super().__init__(timeout=timeout)
+        self.course_code = course_code
+        self.page = page
+
+    @discord.ui.button(label="Previous page", style=discord.ButtonStyle.gray, emoji="⬅️")
+    async def previous_button(self,interaction:discord.Interaction, button:discord.ui.Button):
+        embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page - 1)
+
+        if embed_quota_pageflip == "p0":
+            await interaction.response.send_message("🚫 You're already at the first page!", ephemeral=True)
+        else:
+            try:
+                await interaction.response.edit_message(embed=embed_quota_pageflip, view=self)
+            except:  # Highly unlikely to happen
+                await interaction.response.send_message(f"⚠️ Error: {embed_quota_pageflip}!")
+            else:
+                self.page -= 1
+
+    @discord.ui.button(label="Next page", style=discord.ButtonStyle.gray, emoji="➡️")
+    async def next_button(self,interaction:discord.Interaction, button:discord.ui.Button):
+        embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page + 1)
+
+        if embed_quota_pageflip == "pmax":
+            await interaction.response.send_message("🚫 You're already at the last page!", ephemeral=True)
+        else:
+            try:
+                await interaction.response.edit_message(embed=embed_quota_pageflip, view=self)
+            except:  # Highly unlikely to happen
+                await interaction.response.send_message(f"⚠️ Error: {embed_quota_pageflip}!")
+            else:
+                self.page += 1
+
+# Actual command
 # Lists quotas of all sections of a course
 @bot.tree.command(description="Get quotas for a course!", guilds=bot.guilds)
 async def quota(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
-    embed_quota = get_quota.compose_message(course_code.replace(" ", "").upper())
+    course_code = course_code.replace(" ", "").upper()
+    embed_quota = get_quota.compose_message(course_code)
     
     if embed_quota == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
+    elif embed_quota == "no_sections":
+        await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
         try:
-            await interaction.edit_original_response(embed=embed_quota)
-        except:
+            await interaction.edit_original_response(embed=embed_quota, view=QuotaPage(course_code=course_code))
+        except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
 
 # "info" command
@@ -80,7 +119,7 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
     else:
         try:
             await interaction.edit_original_response(embed=embed_info)
-        except:
+        except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
 
 # "sections" command
@@ -135,7 +174,7 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
     else:
         try:
             await interaction.edit_original_response(embed=embed_sections, view=SectionPage(course_code=course_code))
-        except:
+        except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 # Slash commands end
 
