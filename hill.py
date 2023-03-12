@@ -84,18 +84,57 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
 
 # "sections" command
+# Compose page flip buttons
+class SectionPage(discord.ui.View):
+    def __init__(self, *, timeout=180, course_code="", page=0):
+        super().__init__(timeout=timeout)
+        self.course_code = course_code
+        self.page = page
+
+    @discord.ui.button(label="Previous page", style=discord.ButtonStyle.gray, emoji="⬅️")
+    async def previous_button(self,interaction:discord.Interaction, button:discord.ui.Button):
+        embed_sections_pageflip = get_quota.compose_sections(self.course_code, self.page - 1)
+
+        if embed_sections_pageflip == "p0":
+            await interaction.response.send_message("🚫 You're already at the first page!", ephemeral=True)
+        else:
+            try:
+                await interaction.response.edit_message(embed=embed_sections_pageflip, view=self)
+            except:  # Highly unlikely to happen
+                await interaction.response.send_message(f"⚠️ Error: {embed_sections_pageflip}!")
+            else:
+                self.page -= 1
+
+    @discord.ui.button(label="Next page", style=discord.ButtonStyle.gray, emoji="➡️")
+    async def next_button(self,interaction:discord.Interaction, button:discord.ui.Button):
+        embed_sections_pageflip = get_quota.compose_sections(self.course_code, self.page + 1)
+
+        if embed_sections_pageflip == "pmax":
+            await interaction.response.send_message("🚫 You're already at the last page!", ephemeral=True)
+        else:
+            try:
+                await interaction.response.edit_message(embed=embed_sections_pageflip, view=self)
+            except:  # Highly unlikely to happen
+                await interaction.response.send_message(f"⚠️ Error: {embed_sections_pageflip}!")
+            else:
+                self.page += 1
+
+# Actual command
 # Lists sections of a course and their times, venues and instructors
 @bot.tree.command(description="Get sections of a course!", guilds=bot.guilds)
 async def sections(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
-    embed_sections = get_quota.compose_sections(course_code.replace(" ", "").upper())
+    course_code = course_code.replace(" ", "").upper()
+    embed_sections = get_quota.compose_sections(course_code)
 
     if embed_sections == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
+    elif embed_sections == "no_sections":
+        await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
         try:
-            await interaction.edit_original_response(embed=embed_sections)
+            await interaction.edit_original_response(embed=embed_sections, view=SectionPage(course_code=course_code))
         except:
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 # Slash commands end

@@ -68,6 +68,18 @@ def check_quotas_validity():
     except TypeError:  # Error raised if quotas file is corrupted
         return False
 
+# Calculate max page index
+def find_max_page(dict, page_size):
+    max_page = int(len(dict) / page_size)
+    # Error: a course has no sections
+    if len(dict) == 0:
+        return -1
+    # Edge case: number of sections is non-zero multiple of page size
+    elif len(dict) % page_size == 0:
+        max_page -= 1
+
+    return max_page
+
 # Compose message of course quotas for "quota" command
 def compose_message(course_code):
     quotas = open_quotas()
@@ -152,7 +164,7 @@ def compose_info(course_code):
     return embed_info
 
 # Compose message of course sections, instructors, schedules for "sections" command
-def compose_sections(course_code):
+def compose_sections(course_code, page=0):
     quotas = open_quotas()
 
     # Check if quotas file is available
@@ -174,7 +186,27 @@ def compose_sections(course_code):
     embed_sections = discord.Embed(title=f"{course_dict['title']}",
                                    color=config.color_success)
     
-    for key, value in course_dict['sections'].items():
+    # Calculate max page index
+    page_size = 5
+    max_page = find_max_page(course_dict['sections'], page_size)
+
+    # Send error message if there is no sections
+    if max_page == -1:
+        return "no_sections"
+
+    # Check if page number is valid
+    if page < 0:
+        return "p0"
+    elif page > max_page:
+        return "pmax"
+    
+    # Cut out one page of data
+    try:
+        sections_paged = list(course_dict['sections'].items())[page_size * page: page_size * (page + 1)]
+    except IndexError:
+        sections_paged = list(course_dict['sections'].items())[page_size * page: ]
+
+    for key, value in sections_paged:
         section_id = key
         section_field = "```\n"
 
@@ -225,7 +257,7 @@ def compose_sections(course_code):
                                  value=section_field,
                                  inline=False)
         
-    embed_sections.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated:\n{quotas['time']}")
     embed_sections.set_author(name="🍊 Sections of")
 
     return embed_sections
