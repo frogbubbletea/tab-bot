@@ -60,6 +60,8 @@ def open_old_quotas():
 # If quota searching is interrupted by network issues, quotas file is incomplete and does not contain the update time
 def check_quotas_validity():
     quotas = open_quotas()
+    if not quotas:
+        return False
     try:
         if 'time' in quotas:
             return True
@@ -67,6 +69,11 @@ def check_quotas_validity():
             return False
     except TypeError:  # Error raised if quotas file is corrupted
         return False
+
+# Send message if course data is unavailable
+embed_quota_unavailable = discord.Embed(title=f"⚠️ Course data is unavailable at the moment!",
+                                        description="Try again in a minute.",
+                                        color=config.color_failure)
 
 # Calculate max page index
 def find_max_page(dict, page_size):
@@ -85,11 +92,8 @@ def compose_message(course_code, page=0):
     quotas = open_quotas()
 
     # Check if quotas file is available
-    if (quotas == False) or (not check_quotas_validity()):
-        embed_quota_unavailable = discord.Embed(title=f"⚠️ Quotas are unavailable at the moment!",
-            description="Try again in a minute.",
-            color=config.color_failure)
-        return embed_quota_unavailable
+    if not check_quotas_validity():
+        return "unavailable"
 
     # Check if course code is valid
     try:
@@ -145,11 +149,8 @@ def compose_info(course_code):
     quotas = open_quotas()
 
     # Check if quotas file is available
-    if (quotas == False) or (not check_quotas_validity()):
-        embed_info_unavailable = discord.Embed(title=f"⚠️ Course info is unavailable at the moment!",
-                                               description="Try again in a minute.",
-                                               color=config.color_failure)
-        return embed_info_unavailable
+    if not check_quotas_validity():
+        return "unavailable"
     
     # Check if course code is valid
     try:
@@ -189,11 +190,8 @@ def compose_sections(course_code, page=0):
     quotas = open_quotas()
 
     # Check if quotas file is available
-    if (quotas == False) or (not check_quotas_validity()):
-        embed_info_unavailable = discord.Embed(title=f"⚠️ Course data is unavailable at the moment!",
-                                               description="Try again in a minute.",
-                                               color=config.color_failure)
-        return embed_info_unavailable
+    if not check_quotas_validity():
+        return "unavailable"
     
     # Check if course code is valid
     try:
@@ -241,31 +239,6 @@ def compose_sections(course_code, page=0):
         instructor_list = [t.replace('\n', ', ') for t in instructor_list]
 
         # Add strings to field
-        # Add time string
-        # for idx, time in enumerate(time_list):
-        #     if idx == 0:
-        #         section_field += f"{'Time':<6}| {time}\n"
-        #     else:
-        #         section_field += f"{'|':>7} {time}\n"
-
-        # section_field += "\n"
-
-        # # Add venue string
-        # for idx2, venue in enumerate(venue_list):
-        #     if idx2 == 0:
-        #         section_field += f"{'Venue':<6}| {venue}\n"
-        #     else:
-        #         section_field += f"{'|':>7} {venue}\n"
-
-        # section_field += "\n"
-
-        # # Add instructor string
-        # for idx3, instructor in enumerate(instructor_list):
-        #     if idx3 == 0:
-        #         section_field += f"{'By':<6}| {instructor}\n"
-        #     else:
-        #         section_field += f"{'|':>7} {instructor}\n"
-
         # Add strings row by row
         for i in range(len(time_list)):
             section_field += f"{'Time':<6}| {time_list[i]}\n"

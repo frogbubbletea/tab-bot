@@ -96,8 +96,13 @@ async def quota(interaction: discord.Interaction, course_code: str) -> None:
     course_code = course_code.replace(" ", "").upper()
     embed_quota = get_quota.compose_message(course_code)
     
-    if embed_quota == "key":
+    # Error: Course data unavailable
+    if embed_quota == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: Invalid course code
+    elif embed_quota == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
+    # Error: Course has no sections (unlikely)
     elif embed_quota == "no_sections":
         await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
@@ -114,7 +119,11 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
 
     embed_info = get_quota.compose_info(course_code.replace(" ", "").upper())
 
-    if embed_info == "key":
+    # Error: Course data unavailable
+    if embed_info == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: Invalid course code
+    elif embed_info == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
     else:
         try:
@@ -167,8 +176,13 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
     course_code = course_code.replace(" ", "").upper()
     embed_sections = get_quota.compose_sections(course_code)
 
-    if embed_sections == "key":
+    # Error: Course data unavailable
+    if embed_sections == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: Invalid course code
+    elif embed_sections == "key":
         await interaction.edit_original_response(content="⚠️ Check your course code!")
+    # Error: Course has no sections (unlikely)
     elif embed_sections == "no_sections":
         await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
