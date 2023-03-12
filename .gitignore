@@ -9,3 +9,5 @@ libopus.so.0.8.0
 # ignore quotas files
 quotas.json
 quotas_old.json
+# ignore random shit
+.DS_Store
