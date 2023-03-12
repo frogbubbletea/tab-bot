@@ -23,14 +23,14 @@ Hill can also be added to other servers!
 ## 🖼️ Screenshots
 |||
 | :---         | :---    |
-| Tab sends a message when a new course is added | ![Tab sends a message when a new course is added](https://media.discordapp.net/attachments/958651015064854551/1079783284772450425/image.png) |
-| Tab sends a message when a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](https://media.discordapp.net/attachments/958651015064854551/1079785311741157386/image.png) |
-| Tab sends a message when the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](https://media.discordapp.net/attachments/958651015064854551/1079787190067933214/image.png) |
-| Tab sends a message when a course is deleted | ![Tab sends a message when a course is deleted](https://media.discordapp.net/attachments/958651015064854551/1079786680099274752/image.png) |
-| Tab sends a message when a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](https://media.discordapp.net/attachments/958651015064854551/1079787761143386282/image.png) |
-| Using Hill's command: `/info` | ![Using Hill's command: `/info`](https://media.discordapp.net/attachments/958651015064854551/1079788114622554253/image.png) |
-| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](https://media.discordapp.net/attachments/958651015064854551/1079789317142097941/image.png) |
-| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](https://media.discordapp.net/attachments/958651015064854551/1079791792544813155/image.png) |
+| Tab sends a message when a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/new_course.png) |
+| Tab sends a message when a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/new_section.png) |
+| Tab sends a message when the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/quota_changed.png) |
+| Tab sends a message when a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/course_deleted.png) |
+| Tab sends a message when a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/section_deleted.png) |
+| Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill_info.png) |
+| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill_sections.png) |
+| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill_quota.png) |
 
 ---
 
