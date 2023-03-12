@@ -133,7 +133,18 @@ def compose_info(course_code):
     for key, value in course_dict['info'].items():
         key = key.capitalize()
         key = key.replace("\n", " ")
-        embed_info.add_field(name=f"🍊 {key}", value=value, inline=False)
+
+        # Split info into multiple fields
+        for chunk in range(int(len(value) / 1024) + 1):
+            if chunk == 0:
+                field_title = f"🍊 {key}"
+            else:
+                field_title = f"🍊 {key} (cont.)"
+
+            try:
+                embed_info.add_field(name=field_title, value=value[1024 * chunk: 1024 * (chunk + 1)], inline=False)
+            except IndexError:
+                embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
     
     embed_info.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
     embed_info.set_author(name="🍊 Information for")
