@@ -341,11 +341,14 @@ async def download_quotas(current_loop):
         classes = sub_soup.select('#classes > .course')
 
         for course in classes:
-            course_dict = {}
+            try:
+                course_dict = {}
 
-            course_title = course.find("h2").get_text()
+                course_title = course.find("h2").get_text()
             
-            course_code = course.select(".courseanchor > a")[0]["name"]
+                course_code = course.select(".courseanchor > a")[0]["name"]
+            except:
+                continue
             
             # No more course info im lazy
             # Course info start
