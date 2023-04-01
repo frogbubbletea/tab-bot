@@ -27,18 +27,18 @@ Hill can also be added to other servers!
 ## 🖼️ Screenshots
 |||
 | :---         | :---    |
-| Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/new_course.png) |
-| Tab: a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/new_section.png) |
-| Tab: the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/quota_changed.png) |
-| Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/course_deleted.png) |
-| Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/section_deleted.png) |
-| Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill_info.png) |
-| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill_sections.png) |
-| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill_quota.png) |
+| Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/tab/0-2/new_course.png) |
+| Tab: a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/tab/0-2/new_section.png) |
+| Tab: the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/tab/0-2/quota_changed.png) |
+| Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/tab/0-2/course_deleted.png) |
+| Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/tab/0-2/section_deleted.png) |
+| Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill/0-6/hill_06_info.png) |
+| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill/0-6/hill_06_sections.png) |
+| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/0-6/hill_06_quota.png) |
 
 ---
 
-## 🙏 Credits
+## 🌟 Credits
 Tab and Hill are made possible by the following projects:
 - [evnchn/Course-Quota-Online](https://github.com/evnchn/Course-Quota-Online): Uses the same technologies as this project!
 - [henveloper/discord-ustquotatracker](https://github.com/henveloper/discord-ustquotatracker): The original UST course quota tool!
