@@ -1,7 +1,7 @@
 import datetime
 
 # Embed colors
-color_success = 0x89dceb	
-color_failure = 0xf38ba8
-color_warning = 0xf9e2af
-color_info = 0x89dceb
+color_success = 0x91d7e3	
+color_failure = 0xed8796
+color_warning = 0xeed49f
+color_info = 0x91d7e3

@@ -82,7 +82,13 @@ async def update_quotas():
 
     # Send update confirmation message to quota-updates channel
     update_channel = await bot.fetch_channel(1072569015089774622)
-    await update_channel.send(f"🔃 Updated! {start_time} - {update_time}: {update_quotas.current_loop}")
+
+    start_d = get_quota.disc_time(start_time, "d")  # Date in mm/dd/yyyy
+    start_T = get_quota.disc_time(start_time, "T")  # Time (12h) in h:mm:ss
+    update_d = get_quota.disc_time(update_time, "d")
+    update_T = get_quota.disc_time(update_time, "T")
+
+    await update_channel.send(f"🔃 Updated! {start_d} {start_T} - {update_d} {update_T}: {update_quotas.current_loop}")
 
     # # Start checking diffs after first loop run
     # if update_quotas.current_loop > 0:

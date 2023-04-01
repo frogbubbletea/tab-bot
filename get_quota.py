@@ -6,7 +6,7 @@ import discord
 
 import os
 import json
-from datetime import datetime
+from datetime import datetime, timezone
 import re
 
 import config
@@ -30,10 +30,22 @@ def trim_section(section_code):
     section_trim = re.findall("[A-Z]+[0-9]*[A-Z]*", section_code)[0]
     return section_trim
 
+# Store current time (UTC) as last updated time when quota update is finished
 def update_time():
-    now = datetime.now()
-    date_time = now.strftime("%Y/%m/%d %H:%M:%S")
+    now = datetime.now(timezone.utc)
+    date_time = int(datetime.timestamp(now))
     return date_time
+
+# Convert time string formatted by update_time() to Discord timestamp
+# List of styles: https://gist.github.com/LeviSnoot/d9147767abeef2f770e9ddcd91eb85aa
+def disc_time(stamp, style=""):
+    time_string = f"<t:{stamp}:{style}>"
+    return time_string
+
+# Convert UNIX timestamp to aware datetime object (UTC)
+def time_from_stamp(stamp):
+    time_object = datetime.fromtimestamp(stamp, timezone.utc)
+    return time_object
 
 # Dict containing all subject channels
 channels = None
@@ -126,7 +138,8 @@ def compose_message(course_code, page=0):
 
     # Compose list
     embed_quota = discord.Embed(title=f"{course_dict['title']}",
-        color=config.color_success)
+                                color=config.color_success,
+                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     quota_field = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
 
@@ -139,7 +152,8 @@ def compose_message(course_code, page=0):
 
     embed_quota.add_field(name="🍊 Sections", value=quota_field, inline=False)
 
-    embed_quota.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated:\n{quotas['time']}")
+    # Embed timestamp (update time) is shown behind footer
+    embed_quota.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
     embed_quota.set_author(name="🍊 Quotas of")
 
     return embed_quota
@@ -162,7 +176,8 @@ def compose_info(course_code):
             return "key"
     
     embed_info = discord.Embed(title=f"{course_dict['title']}",
-                               color=config.color_success)
+                               color=config.color_success,
+                               timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     for key, value in course_dict['info'].items():
         key = key.capitalize()
@@ -180,7 +195,11 @@ def compose_info(course_code):
             except IndexError:
                 embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
     
-    embed_info.set_footer(text=f"🕒 Last updated:\n{quotas['time']}")
+    # Last updated time moved to its own field because no Discord timestamps in footers
+    # last_updated = disc_time(quotas['time'], "T")
+    # embed_info.add_field(name="🕒 Last updated:", value=last_updated, inline=False)
+
+    embed_info.set_footer(text=f"🕒 Last updated")
     embed_info.set_author(name="🍊 Information for")
 
     return embed_info
@@ -203,7 +222,8 @@ def compose_sections(course_code, page=0):
             return "key"
     
     embed_sections = discord.Embed(title=f"{course_dict['title']}",
-                                   color=config.color_success)
+                                   color=config.color_success,
+                                   timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     # Calculate max page index
     page_size = 5
@@ -250,8 +270,13 @@ def compose_sections(course_code, page=0):
         embed_sections.add_field(name=f"🍊 {key}",
                                  value=section_field,
                                  inline=False)
-        
-    embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated:\n{quotas['time']}")
+
+    # Last updated time moved to its own field because no Discord timestamps in footers
+    # last_updated = disc_time(quotas['time'], "T")
+    # embed_sections.add_field(name="🕒 Last updated:", value=last_updated, inline=False)
+
+    # Embed timestamp (update time) is shown behind footer
+    embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
     embed_sections.set_author(name="🍊 Sections of")
 
     return embed_sections
