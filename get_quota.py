@@ -194,10 +194,6 @@ def compose_info(course_code):
                 embed_info.add_field(name=field_title, value=value[1024 * chunk: 1024 * (chunk + 1)], inline=False)
             except IndexError:
                 embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
-    
-    # Last updated time moved to its own field because no Discord timestamps in footers
-    # last_updated = disc_time(quotas['time'], "T")
-    # embed_info.add_field(name="🕒 Last updated:", value=last_updated, inline=False)
 
     embed_info.set_footer(text=f"🕒 Last updated")
     embed_info.set_author(name="🍊 Information for")
@@ -270,10 +266,6 @@ def compose_sections(course_code, page=0):
         embed_sections.add_field(name=f"🍊 {key}",
                                  value=section_field,
                                  inline=False)
-
-    # Last updated time moved to its own field because no Discord timestamps in footers
-    # last_updated = disc_time(quotas['time'], "T")
-    # embed_sections.add_field(name="🕒 Last updated:", value=last_updated, inline=False)
 
     # Embed timestamp (update time) is shown behind footer
     embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
