@@ -27,15 +27,15 @@ Hill can also be added to other servers!
 ## 🖼️ Screenshots
 |||
 | :---         | :---    |
-| Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/tab/0-2/new_course.png) |
-| Tab: a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/tab/0-2/new_section.png) |
-| Tab: the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/tab/0-2/quota_changed.png) |
-| Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/tab/0-2/course_deleted.png) |
-| Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/tab/0-2/section_deleted.png) |
-| Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill/0-6/hill_06_info.png) |
-| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill/0-6/hill_06_sections.png) |
-| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/0-6/hill_06_quota.png) |
-
+| Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/tab/tab_02_hill_08/new_course.png) |
+| Tab: a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/tab/tab_02_hill_08/new_section.png) |
+| Tab: the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/tab/tab_02_hill_08/quota_changed.png) |
+| Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/tab/tab_02_hill_08/course_deleted.png) |
+| Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/tab/tab_02_hill_08/section_deleted.png) |
+| Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill/0-8/hill_08_info.png) |
+| Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill/0-8/hill_08_sections.png) |
+| Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/0-8/hill_08_quota.png) |
+| Hill: command autocompletion | ![Hill: command autocompletion](sample_screenshots/hill/0-8/hill_08_autocomplete.png) |
 ---
 
 ## 🌟 Credits
