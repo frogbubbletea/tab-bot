@@ -5,6 +5,7 @@ from discord.ext import commands
 
 import os
 from dotenv import load_dotenv
+import typing
 
 import get_quota
 
@@ -104,10 +105,21 @@ def get_source_url(course_code):
     source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{get_quota.semester_code}/subject/{course_code[0: 4]}#{course_code}"
     return source_url
 
+# Get course list for commands autocomplete
+def get_course_list():
+    quotas = get_quota.open_quotas()
+
+    # Check if quotas file is available
+    if not get_quota.check_quotas_validity():
+        return []
+    
+    courses = list(quotas.keys())
+    return courses
+
 # "quota" command
 # Lists quotas of all sections of a course
 @bot.tree.command(description="Get quotas for a course!", guilds=bot.guilds)
-async def quota(interaction: discord.Interaction, course_code: str) -> None:
+async def quota(interaction: discord.Interaction, course_code: str):
     await interaction.response.defer(thinking=True)
 
     course_code = course_code.replace(" ", "").upper()
@@ -129,6 +141,18 @@ async def quota(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(embed=embed_quota, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
+
+# Autocomplete for "quota" command
+@quota.autocomplete('course_code')
+async def quota_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    courses = get_course_list()
+    data = [app_commands.Choice(name=course, value=course)
+            for course in courses if current.replace(" ", "").upper() in course.upper()
+            ][0: 25]
+    return data
 
 # "info" command
 # Shows course info
@@ -153,6 +177,18 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(embed=embed_info, view=view)
         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
+
+# Autocomplete for "info" command
+@info.autocomplete('course_code')
+async def info_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    courses = get_course_list()
+    data = [app_commands.Choice(name=course, value=course)
+            for course in courses if current.replace(" ", "").upper() in course.upper()
+            ][0: 25]
+    return data
 
 # "sections" command
 # Lists sections of a course and their times, venues and instructors
@@ -179,6 +215,19 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(embed=embed_sections, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
+
+# Autocomplete for "sections" command
+@sections.autocomplete('course_code')
+async def sections_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    courses = get_course_list()
+    data = [app_commands.Choice(name=course, value=course)
+            for course in courses if current.replace(" ", "").upper() in course.upper()
+            ][0: 25]
+    return data
+
 # Slash commands end
 
 # Text commands start
