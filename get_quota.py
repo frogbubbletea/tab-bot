@@ -301,185 +301,272 @@ async def check_diffs(new_quotas=None, old_quotas=None):
         # Skip 'time' entry
         if key == 'time':
             continue
+
         # 🥑 New course!
         if key not in old_quotas:
-            await channels.get(key[0: 4], channels['other']).send(f"🥑 **New course!**\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+            # await channels.get(key[0: 4], channels['other']).send(f"🥑 **New course!**\n{value.get('title', 'Error')}\n{len(value['sections'])} sections")
+            # Prepare change announcement embed: course name
+            embed_new_course = discord.Embed(
+                title=f"{value.get('title', 'Error')}",
+                color=0x8bd5ca  # Teal
+            )
+            # Prepare header of change announcement
+            embed_new_course.set_author(name="🥑 New course!")
+
+            # Display list of sections
+            new_course_sections = "```\n"
+            new_course_sections += "\n".join(list(value['sections'].keys()))
+            new_course_sections += "\n```"
+
+            # Add field
+            embed_new_course.add_field(
+                name=f"🥑 {len(value['sections'])} sections",
+                value=new_course_sections,
+                inline=False
+            )
+
+            # Send the announcement
+            await channels.get(key[0: 4], channels['other']).send(embed=embed_new_course)
             changed = True
+
         else:
             for key2, value2 in value['sections'].items():
                 # 🍅 New section!
                 if key2 not in old_quotas[key]['sections']:
+                    # Quota of the new section
                     quota_new = value2[4].split("\n", 1)[0]
-                    await channels.get(key[0: 4], channels['other']).send(f"🍅 **New section!**\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
+                    # await channels.get(key[0: 4], channels['other']).send(f"🍅 **New section!**\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
+                    
+                    # Prepare change announcement embed: course name, section name
+                    embed_new_section = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0xed8796  # Red
+                    )
+                    # Prepare header of change announcement
+                    embed_new_section.set_author(name="🍅 New section!")
+
+                    # Display quota of section
+                    new_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+                    new_section_quotas += f"{trim_section(key2):<8}| "
+                    for i in range(4, 8):
+                        new_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
+                    new_section_quotas += "\n```"
+
+                    # Add field
+                    embed_new_section.add_field(
+                        name="🍅 Quota",
+                        value=new_section_quotas,
+                        inline=False
+                    )
+                    
+                    # Send the announcement
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_new_section)
                     changed = True
                 
-                # 🍋 Quota changed!
-                elif value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:  
-                    quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
-                    quota_new = value2[4].split("\n", 1)[0]
-                    await channels.get(key[0: 4], channels['other']).send(f"🍋 **Quota changed!**\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
-                    changed = True
-                
-                # 🥭 Date & Time changed!
-                # Initialize list of values
-                # Time list elements are guaranteed to be unique
-                time_list_new = value2[1].split("\n\n\n")
-                time_list_old = old_quotas[key]['sections'][key2][1].split("\n\n\n")
+                else:
+                    # 🍋 Quota changed!
+                    if value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:
+                        # Original quota and new quota
+                        quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
+                        quota_new = value2[4].split("\n", 1)[0]
+                        # await channels.get(key[0: 4], channels['other']).send(f"🍋 **Quota changed!**\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
+                        
+                        # Prepare change announcement embed: course name, section name
+                        embed_quota_change = discord.Embed(
+                            title=f"{value.get('title', 'Error')}: {key2}",
+                            color=0xeed49f  # Yellow
+                        )
+                        # Prepare header of change announcement
+                        embed_quota_change.set_author(name="🍋 Quota changed!")
 
-                # Prepare change announcement text: course name, section name, section ID
-                embed_time_change = discord.Embed(
-                    title=f"{value.get('title', 'Error')}: {key2}",
-                    color=0xee99a0  # Maroon
-                )
-                # Prepare header of change announcement
-                embed_time_change.set_author(name="🥭 Date & Time changed!")
+                        # Display quota change
+                        changed_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+                        changed_section_quotas += f"{trim_section(key2):<8}| "
+                        for i in range(4, 8):
+                            changed_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
+                        changed_section_quotas += "\n```"
 
-                # Check additions and removals
-                time_deltas = list_diffs(time_list_new, time_list_old)
-                # If there is addition: add additions field
-                if time_deltas[0] != []:
-                    # Initialize field
-                    time_additions_field = "```\n"
-                    time_additions_field += "\n\n".join(time_deltas[0])
-                    time_additions_field += "\n```"
-                    # Add field to embed
-                    embed_time_change.add_field(
-                        name="🥭 Additions [+]",
-                        value=time_additions_field,
-                        inline=False
+                        # Add field
+                        embed_quota_change.add_field(
+                            name=f"🍋 {quota_old} -> {quota_new}",
+                            value=changed_section_quotas,
+                            inline=False
+                        )
+
+                        # Display magnitude of quota change
+                        # Determine if quota added or removed
+                        quota_change_mag = int(quota_new) - int(quota_old)
+                        if quota_change_mag > 0:
+                            quota_change_footer = f"🍋 Added {quota_change_mag} quotas"
+                        else:
+                            quota_change_footer = f"🍋 Removed {-quota_change_mag} quotas"
+                        # Set footer
+                        embed_quota_change.set_footer(text=quota_change_footer)
+
+                        # Send the announcement
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_quota_change)
+                        changed = True
+                    
+                    # 🥭 Date & Time changed!
+                    # Initialize list of values
+                    # Time list elements are guaranteed to be unique
+                    time_list_new = value2[1].split("\n\n\n")
+                    time_list_old = old_quotas[key]['sections'][key2][1].split("\n\n\n")
+
+                    # Prepare change announcement text: course name, section name, section ID
+                    embed_time_change = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0xee99a0  # Maroon
                     )
-                # If there is removal: add removals field
-                if time_deltas[1] != []:
-                    # Initialize field
-                    time_removals_field = "```\n"
-                    time_removals_field += "\n\n".join(time_deltas[1])
-                    time_removals_field += "\n```"
-                    # Add field to embed
-                    embed_time_change.add_field(
-                        name="🥭 Removals [-]",
-                        value=time_removals_field,
-                        inline=False
+                    # Prepare header of change announcement
+                    embed_time_change.set_author(name="🥭 Date & Time changed!")
+
+                    # Check additions and removals
+                    time_deltas = list_diffs(time_list_new, time_list_old)
+                    # If there is addition: add additions field
+                    if time_deltas[0] != []:
+                        # Initialize field
+                        time_additions_field = "```\n"
+                        time_additions_field += "\n\n".join(time_deltas[0])
+                        time_additions_field += "\n```"
+                        # Add field to embed
+                        embed_time_change.add_field(
+                            name="🥭 Additions [+]",
+                            value=time_additions_field,
+                            inline=False
+                        )
+                    # If there is removal: add removals field
+                    if time_deltas[1] != []:
+                        # Initialize field
+                        time_removals_field = "```\n"
+                        time_removals_field += "\n\n".join(time_deltas[1])
+                        time_removals_field += "\n```"
+                        # Add field to embed
+                        embed_time_change.add_field(
+                            name="🥭 Removals [-]",
+                            value=time_removals_field,
+                            inline=False
+                        )
+
+                    # Display number of changes
+                    embed_time_change.set_footer(text=f"🥭 {len(time_deltas[0])} additions, {len(time_deltas[1])} removals")
+
+                    # If there is time change, send the announcement
+                    if time_deltas != ([], []):
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_time_change)
+                        changed = True
+
+                    # 🥝 Venue changed!
+                    # Initialize list of values
+                    venue_list_new = value2[2].split("\n")
+                    venue_list_old = old_quotas[key]['sections'][key2][2].split("\n")
+                    # Remove empty list elements
+                    venue_list_new = [venue for venue in venue_list_new if venue != ""]
+                    venue_list_old = [venue for venue in venue_list_old if venue != ""]
+                    # Remove duplicates
+                    # Create a dict using the list items as keys to automatically remove any duplicates because dicts cannot have duplicate keys
+                    # Convert dict back into a list, assign it to the list of venues
+                    venue_list_new = list(dict.fromkeys(venue_list_new))
+                    venue_list_old = list(dict.fromkeys(venue_list_old))
+
+                    # Prepare change announcement text: Header, course name, section name, section ID
+                    embed_venue_change = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0xa6da95  # Green
                     )
+                    # Prepare header of change announcement
+                    embed_venue_change.set_author(name="🥝 Venue changed!")
 
-                # Display number of changes
-                embed_time_change.set_footer(text=f"🥭 {len(time_deltas[0])} additions, {len(time_deltas[1])} removals")
+                    # Check additions and removals
+                    venue_deltas = list_diffs(venue_list_new, venue_list_old)
+                    # If there is addition: add additions field
+                    if venue_deltas[0] != []:
+                        # Initialize field
+                        venue_additions_field = "```\n"
+                        venue_additions_field += "\n".join(venue_deltas[0])
+                        venue_additions_field += "\n```"
+                        # Add field to embed
+                        embed_venue_change.add_field(
+                            name="🥝 Additions [+]",
+                            value=venue_additions_field,
+                            inline=False
+                        )
+                    # If there is removal: add removals field
+                    if venue_deltas[1] != []:
+                        # Initialize field
+                        venue_removals_field = "```\n"
+                        venue_removals_field += "\n".join(venue_deltas[1])
+                        venue_removals_field += "\n```"
+                        # Add field to embed
+                        embed_venue_change.add_field(
+                            name="🥝 Removals [-]",
+                            value=venue_removals_field,
+                            inline=False
+                        )
+                    
+                    # Display number of changes
+                    embed_venue_change.set_footer(text=f"🥝 {len(venue_deltas[0])} additions, {len(venue_deltas[1])} removals")
 
-                # If there is time change, send the announcement
-                if time_deltas != ([], []):
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_time_change)
-                    changed = True
+                    # If there is venue change, send the announcement
+                    if venue_deltas != ([], []):
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_venue_change)
+                        changed = True
+                    
+                    # 🍇 Instructor changed!
+                    # Initialize list of values
+                    inst_list_new = value2[3].split("\n")
+                    inst_list_old = old_quotas[key]['sections'][key2][3].split("\n")
+                    # Remove empty list elements
+                    inst_list_new = [inst for inst in inst_list_new if inst != ""]
+                    inst_list_old = [inst for inst in inst_list_old if inst != ""]
+                    # Remove duplicates
+                    # Create a dict using the list items as keys to automatically remove any duplicates because dicts cannot have duplicate keys
+                    # Convert dict back into a list, assign it to the list of instructors
+                    inst_list_new = list(dict.fromkeys(inst_list_new))
+                    inst_list_old = list(dict.fromkeys(inst_list_old))
 
-                # 🥝 Venue changed!
-                # Initialize list of values
-                venue_list_new = value2[2].split("\n")
-                venue_list_old = old_quotas[key]['sections'][key2][2].split("\n")
-                # Remove empty list elements
-                venue_list_new = [venue for venue in venue_list_new if venue != ""]
-                venue_list_old = [venue for venue in venue_list_old if venue != ""]
-                # Remove duplicates
-                # Create a dict using the list items as keys to automatically remove any duplicates because dicts cannot have duplicate keys
-                # Convert dict back into a list, assign it to the list of venues
-                venue_list_new = list(dict.fromkeys(venue_list_new))
-                venue_list_old = list(dict.fromkeys(venue_list_old))
-
-                # Prepare change announcement text: Header, course name, section name, section ID
-                embed_venue_change = discord.Embed(
-                    title=f"{value.get('title', 'Error')}: {key2}",
-                    color=0xa6da95  # Green
-                )
-                # Prepare header of change announcement
-                embed_venue_change.set_author(name="🥝 Venue changed!")
-
-                # Check additions and removals
-                venue_deltas = list_diffs(venue_list_new, venue_list_old)
-                # If there is addition: add additions field
-                if venue_deltas[0] != []:
-                    # Initialize field
-                    venue_additions_field = "```\n"
-                    venue_additions_field += "\n".join(venue_deltas[0])
-                    venue_additions_field += "\n```"
-                    # Add field to embed
-                    embed_venue_change.add_field(
-                        name="🥝 Additions [+]",
-                        value=venue_additions_field,
-                        inline=False
+                    # Prepare change announcement text: Header, course name, section name, section ID
+                    embed_inst_change = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0xc6a0f6  # Mauve
                     )
-                # If there is removal: add removals field
-                if venue_deltas[1] != []:
-                    # Initialize field
-                    venue_removals_field = "```\n"
-                    venue_removals_field += "\n".join(venue_deltas[1])
-                    venue_removals_field += "\n```"
-                    # Add field to embed
-                    embed_venue_change.add_field(
-                        name="🥝 Removals [-]",
-                        value=venue_removals_field,
-                        inline=False
-                    )
-                
-                # Display number of changes
-                embed_venue_change.set_footer(text=f"🥝 {len(venue_deltas[0])} additions, {len(venue_deltas[1])} removals")
+                    # Prepare header of change announcement
+                    embed_inst_change.set_author(name="🍇 Instructor changed!")
 
-                # If there is venue change, send the announcement
-                if venue_deltas != ([], []):
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_venue_change)
-                    changed = True
-                
-                # 🍇 Instructor changed!
-                # Initialize list of values
-                inst_list_new = value2[3].split("\n")
-                inst_list_old = old_quotas[key]['sections'][key2][3].split("\n")
-                # Remove empty list elements
-                inst_list_new = [inst for inst in inst_list_new if inst != ""]
-                inst_list_old = [inst for inst in inst_list_old if inst != ""]
-                # Remove duplicates
-                # Create a dict using the list items as keys to automatically remove any duplicates because dicts cannot have duplicate keys
-                # Convert dict back into a list, assign it to the list of instructors
-                inst_list_new = list(dict.fromkeys(inst_list_new))
-                inst_list_old = list(dict.fromkeys(inst_list_old))
+                    # Check additions and removals
+                    inst_deltas = list_diffs(inst_list_new, inst_list_old)
+                    # If there is addition: add additions field
+                    if inst_deltas[0] != []:
+                        # Initialize field
+                        inst_additions_field = "```\n"
+                        inst_additions_field += "\n".join(inst_deltas[0])
+                        inst_additions_field += "\n```"
+                        # Add field to embed
+                        embed_inst_change.add_field(
+                            name="🍇 Additions [+]",
+                            value=inst_additions_field,
+                            inline=False
+                        )
+                    # If there is removal: add removals field
+                    if inst_deltas[1] != []:
+                        # Initialize field
+                        inst_removals_field = "```\n"
+                        inst_removals_field += "\n".join(inst_deltas[1])
+                        inst_removals_field += "\n```"
+                        # Add field to embed
+                        embed_inst_change.add_field(
+                            name="🍇 Removals [-]",
+                            value=inst_removals_field,
+                            inline=False
+                        )
+                    
+                    # Display number of changes
+                    embed_inst_change.set_footer(text=f"🍇 {len(inst_deltas[0])} additions, {len(inst_deltas[1])} removals")
 
-                # Prepare change announcement text: Header, course name, section name, section ID
-                embed_inst_change = discord.Embed(
-                    title=f"{value.get('title', 'Error')}: {key2}",
-                    color=0xc6a0f6  # Mauve
-                )
-                # Prepare header of change announcement
-                embed_inst_change.set_author(name="🍇 Instructor changed!")
-
-                # Check additions and removals
-                inst_deltas = list_diffs(inst_list_new, inst_list_old)
-                # If there is addition: add additions field
-                if inst_deltas[0] != []:
-                    # Initialize field
-                    inst_additions_field = "```\n"
-                    inst_additions_field += "\n".join(inst_deltas[0])
-                    inst_additions_field += "\n```"
-                    # Add field to embed
-                    embed_inst_change.add_field(
-                        name="🍇 Additions [+]",
-                        value=inst_additions_field,
-                        inline=False
-                    )
-                # If there is removal: add removals field
-                if inst_deltas[1] != []:
-                    # Initialize field
-                    inst_removals_field = "```\n"
-                    inst_removals_field += "\n".join(inst_deltas[1])
-                    inst_removals_field += "\n```"
-                    # Add field to embed
-                    embed_inst_change.add_field(
-                        name="🍇 Removals [-]",
-                        value=inst_removals_field,
-                        inline=False
-                    )
-                
-                # Display number of changes
-                embed_inst_change.set_footer(text=f"🍇 {len(inst_deltas[0])} additions, {len(inst_deltas[1])} removals")
-
-                # If there is instructor change, send the announcement
-                if inst_deltas != ([], []):
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change)
-                    changed = True
+                    # If there is instructor change, send the announcement
+                    if inst_deltas != ([], []):
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change)
+                        changed = True
 
     for key3, value3 in old_quotas.items():
         # Skip "time" entry
@@ -487,13 +574,60 @@ async def check_diffs(new_quotas=None, old_quotas=None):
             continue
         # ☕ Course deleted!
         if key3 not in new_quotas:
-            await channels.get(key3[0: 4], channels['other']).send(f"☕ **Course deleted!**\n{value3.get('title', 'Error')}\n{len(value3['sections'])} sections")
+            # await channels.get(key3[0: 4], channels['other']).send(f"☕ **Course deleted!**\n{value3.get('title', 'Error')}\n{len(value3['sections'])} sections")
+            # Prepare change announcement embed: course name
+            embed_delete_course = discord.Embed(
+                title=f"{value3.get('title', 'Error')}",
+                color=0xf4dbd6  # Rosewater
+            )
+            # Prepare header of change announcement
+            embed_delete_course.set_author(name="☕ Course deleted!")
+
+            # Display list of sections
+            delete_course_sections = "```\n"
+            delete_course_sections += "\n".join(list(value3['sections'].keys()))
+            delete_course_sections += "\n```"
+
+            # Add field
+            embed_delete_course.add_field(
+                name=f"☕ {len(value3['sections'])} sections",
+                value=delete_course_sections,
+                inline=False
+            )
+
+            # Send the announcement
+            await channels.get(key[0: 4], channels['other']).send(embed=embed_delete_course)
             changed = True
+
         else:
             for key4, value4 in value3['sections'].items():
                 # 🍹 Section deleted!
                 if key4 not in new_quotas[key3]['sections']:
-                    await channels.get(key3[0: 4], channels['other']).send(f"🍹 **Section deleted!**\n{value3.get('title', 'Error')}: {key4}")
+                    # await channels.get(key3[0: 4], channels['other']).send(f"🍹 **Section deleted!**\n{value3.get('title', 'Error')}: {key4}")
+                    # Prepare change announcement embed: course name, section name
+                    embed_delete_section = discord.Embed(
+                        title=f"{value3.get('title', 'Error')}: {key4}",
+                        color=0xf5a97f  # Peach
+                    )
+                    # Prepare header of change announcement
+                    embed_delete_section.set_author(name="🍹 Section deleted!")
+
+                    # Display quota of section
+                    delete_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+                    delete_section_quotas += f"{trim_section(key4):<8}| "
+                    for i in range(4, 8):
+                        delete_section_quotas += '{:<6}'.format(value4[i].split("\n", 1)[0])
+                    delete_section_quotas += "\n```"
+                    
+                    # Add field
+                    embed_delete_section.add_field(
+                        name="🍹 Quota",
+                        value=delete_section_quotas,
+                        inline=False
+                    )
+                    
+                    # Send the announcement
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_delete_section)
                     changed = True
 
     return changed
