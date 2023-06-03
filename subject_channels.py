@@ -101,6 +101,11 @@ subjects_channels = {
     "other": 1072780254306906112
 }
 
+# Uncomment when testing output
+# subjects_channels = {
+#     "other": 1114416691649196032
+# }
+
 async def find_channels(bot):
     channels = {k:await bot.fetch_channel(v) for k,v in subjects_channels.items()}
     return channels
