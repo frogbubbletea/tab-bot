@@ -53,6 +53,14 @@ def list_diffs(temp1, temp2):
     removals = [x for x in temp2 if x not in set(temp1)]  # Elements in temp2 not in temp1
     return additions, removals  # Returns a tuple (additions, removals)
 
+# Add diff highlighting to a list of strings
+# Calls list_diffs() to find diffs
+def diff_highlight(new, old):
+    diff_tuple = list_diffs(new, old)
+    new = [("+" + x.replace("\n", "\n+")) if x in diff_tuple[0] else (" " + x.replace("\n", "\n ")) for x in new]
+    old = [("-" + x.replace("\n", "\n-")) if x in diff_tuple[1] else (" " + x.replace("\n", "\n ")) for x in old]
+    return new, old  # Returns a tuple of new, old with diff highlighting
+
 # Dict containing all subject channels
 channels = None
 async def get_channels(bot):
@@ -423,30 +431,29 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
                     # Check additions and removals
                     time_deltas = list_diffs(time_list_new, time_list_old)
-                    # If there is addition: add additions field
-                    if time_deltas[0] != []:
-                        # Initialize field
-                        time_additions_field = "```\n"
-                        time_additions_field += "\n\n".join(time_deltas[0])
-                        time_additions_field += "\n```"
-                        # Add field to embed
-                        embed_time_change.add_field(
-                            name="🥭 Additions [+]",
-                            value=time_additions_field,
-                            inline=False
-                        )
-                    # If there is removal: add removals field
-                    if time_deltas[1] != []:
-                        # Initialize field
-                        time_removals_field = "```\n"
-                        time_removals_field += "\n\n".join(time_deltas[1])
-                        time_removals_field += "\n```"
-                        # Add field to embed
-                        embed_time_change.add_field(
-                            name="🥭 Removals [-]",
-                            value=time_removals_field,
-                            inline=False
-                        )
+                    time_diffed = diff_highlight(time_list_new, time_list_old)
+
+                    # Add old date & time field
+                    time_old_field = "```diff\n"  # Diff syntax highlighting
+                    time_old_field += "\n\n".join(time_diffed[1])
+                    time_old_field += "\n```"
+                    # Add field to embed
+                    embed_time_change.add_field(
+                        name="🥭 Old",
+                        value=time_old_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Add new date & time field
+                    time_new_field = "```diff\n"  # Diff syntax highlighting
+                    time_new_field += "\n\n".join(time_diffed[0])
+                    time_new_field += "\n```"
+                    # Add field to embed
+                    embed_time_change.add_field(
+                        name="🥭 New",
+                        value=time_new_field,
+                        inline=True  # Split view comparison
+                    )
 
                     # Display number of changes
                     embed_time_change.set_footer(text=f"🥭 {len(time_deltas[0])} additions, {len(time_deltas[1])} removals")
@@ -479,30 +486,29 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
                     # Check additions and removals
                     venue_deltas = list_diffs(venue_list_new, venue_list_old)
-                    # If there is addition: add additions field
-                    if venue_deltas[0] != []:
-                        # Initialize field
-                        venue_additions_field = "```\n"
-                        venue_additions_field += "\n".join(venue_deltas[0])
-                        venue_additions_field += "\n```"
-                        # Add field to embed
-                        embed_venue_change.add_field(
-                            name="🥝 Additions [+]",
-                            value=venue_additions_field,
-                            inline=False
-                        )
-                    # If there is removal: add removals field
-                    if venue_deltas[1] != []:
-                        # Initialize field
-                        venue_removals_field = "```\n"
-                        venue_removals_field += "\n".join(venue_deltas[1])
-                        venue_removals_field += "\n```"
-                        # Add field to embed
-                        embed_venue_change.add_field(
-                            name="🥝 Removals [-]",
-                            value=venue_removals_field,
-                            inline=False
-                        )
+                    venue_diffed = diff_highlight(venue_list_new, venue_list_old)
+
+                    # Add old venue field
+                    venue_old_field = "```diff\n"  # Diff syntax highlighting
+                    venue_old_field += "\n".join(venue_diffed[1])
+                    venue_old_field += "\n```"
+                    # Add field to embed
+                    embed_venue_change.add_field(
+                        name="🥝 Old",
+                        value=venue_old_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Add new venue field
+                    venue_new_field = "```diff\n"  # Diff syntax highlighting
+                    venue_new_field += "\n".join(venue_diffed[0])
+                    venue_new_field += "\n```"
+                    # Add field to embed
+                    embed_venue_change.add_field(
+                        name="🥝 New",
+                        value=venue_new_field,
+                        inline=True  # Split view comparison
+                    )
                     
                     # Display number of changes
                     embed_venue_change.set_footer(text=f"🥝 {len(venue_deltas[0])} additions, {len(venue_deltas[1])} removals")
@@ -535,30 +541,29 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
                     # Check additions and removals
                     inst_deltas = list_diffs(inst_list_new, inst_list_old)
-                    # If there is addition: add additions field
-                    if inst_deltas[0] != []:
-                        # Initialize field
-                        inst_additions_field = "```\n"
-                        inst_additions_field += "\n".join(inst_deltas[0])
-                        inst_additions_field += "\n```"
-                        # Add field to embed
-                        embed_inst_change.add_field(
-                            name="🍇 Additions [+]",
-                            value=inst_additions_field,
-                            inline=False
-                        )
-                    # If there is removal: add removals field
-                    if inst_deltas[1] != []:
-                        # Initialize field
-                        inst_removals_field = "```\n"
-                        inst_removals_field += "\n".join(inst_deltas[1])
-                        inst_removals_field += "\n```"
-                        # Add field to embed
-                        embed_inst_change.add_field(
-                            name="🍇 Removals [-]",
-                            value=inst_removals_field,
-                            inline=False
-                        )
+                    inst_diffed = diff_highlight(inst_list_new, inst_list_old)
+
+                    # Add old instructor field
+                    inst_old_field = "```diff\n"  # Diff syntax highlighting
+                    inst_old_field += "\n".join(inst_diffed[1])
+                    inst_old_field += "\n```"
+                    # Add field to embed
+                    embed_inst_change.add_field(
+                        name="🍇 Old",
+                        value=inst_old_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Add new instructor field
+                    inst_new_field = "```diff\n"  # Diff syntax highlighting
+                    inst_new_field += "\n".join(inst_diffed[0])
+                    inst_new_field += "\n```"
+                    # Add field to embed
+                    embed_inst_change.add_field(
+                        name="🍇 New",
+                        value=inst_new_field,
+                        inline=True  # Split view comparison
+                    )
                     
                     # Display number of changes
                     embed_inst_change.set_footer(text=f"🍇 {len(inst_deltas[0])} additions, {len(inst_deltas[1])} removals")
