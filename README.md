@@ -32,8 +32,12 @@ Hill can also be added to other servers!
 | Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/tab/new_course.png) |
 | Tab: a new section (of an existing course) is added | ![Tab sends a message when a new section (of an existing course) is added](sample_screenshots/tab/new_section.png) |
 | Tab: the quota of a section is changed | ![Tab sends a message when the quota of a section is changed](sample_screenshots/tab/quota_changed.png) |
+| Tab: the date & time of a section is changed | ![Tab sends a message when the date and time of a section is changed](sample_screenshots/tab/time_changed.png) |
+| Tab: the venue of a section is changed | ![Tab sends a message when the venue of a section is changed](sample_screenshots/tab/venue_changed.png) |
+| Tab: the instructor of a section is changed | ![Tab sends a message when the instructor of a section is changed](sample_screenshots/tab/inst_changed.png) |
 | Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/tab/course_deleted.png) |
 | Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/tab/section_deleted.png) |
+|||
 | Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill/info.png) |
 | Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill/sections.png) |
 | Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/quota.png) |
