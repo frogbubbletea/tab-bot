@@ -601,7 +601,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
             )
 
             # Send the announcement
-            await channels.get(key[0: 4], channels['other']).send(embed=embed_delete_course)
+            await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_course)
             changed = True
 
         else:
@@ -632,7 +632,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     )
                     
                     # Send the announcement
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_delete_section)
+                    await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_section)
                     changed = True
 
     return changed

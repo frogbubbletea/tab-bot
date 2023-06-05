@@ -3,6 +3,7 @@ import discord
 import json
 
 # Define channels for subjects
+# Uncomment before commit!!!!!
 subjects_channels = {
     "ACCT": 1072400085264125952,
     "AESF": 1072400225286762566,
@@ -102,7 +103,10 @@ subjects_channels = {
 }
 
 # Uncomment when testing output
+# Comment when commit!!!!!!!!!!
 # subjects_channels = {
+#     "ENGG": 1115147111974047744,
+#     "MATH": 1115147149911531591,
 #     "other": 1114416691649196032
 # }
 
