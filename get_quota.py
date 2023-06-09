@@ -279,7 +279,7 @@ def compose_sections(course_code, page=0):
 
     for key, value in sections_paged:
         section_id = key
-        section_field = "```\n"
+        section_field = "```ansi\n"  # Use ANSI text coloring
 
         time_list = value[1].split("\n\n\n")
         venue_list = value[2].split("\n\n\n")
@@ -296,6 +296,20 @@ def compose_sections(course_code, page=0):
             section_field += f"{'Time':<6}| {time_list[i]}\n"
             section_field += f"{'Venue':<6}| {venue_list[i]}\n"
             section_field += f"{'By':<6}| {instructor_list[i]}\n"
+            section_field += "\n"
+
+        # Add remarks
+        # There will always be at most 1 remark per section
+        if value[8] != "\u00a0":  # Only make space if remarks field is non-empty
+            # Split remarks into lines to remove redundant newlines
+            remarks_list_unfiltered = value[8].split("\n")
+            # Remove empty lines
+            remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
+            # Display the remarks
+            section_field += "Remarks:\n"  
+            section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
+            section_field += "\n".join(remarks_list)
+            section_field += "\u001b[0m"  # Coloring end
             section_field += "\n"
 
         section_field += "```"
