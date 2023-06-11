@@ -409,11 +409,32 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                 
                 else:
                     # 🍋 Quota changed!
-                    if value2[4].split("\n", 1)[0] != old_quotas[key]['sections'][key2][4].split("\n", 1)[0]:
-                        # Original quota and new quota
-                        quota_old = old_quotas[key]['sections'][key2][4].split("\n", 1)[0]
-                        quota_new = value2[4].split("\n", 1)[0]
-                        # await channels.get(key[0: 4], channels['other']).send(f"🍋 **Quota changed!**\n{value.get('title', 'Error')}: {key2}\n{quota_old} -> {quota_new}")
+                    quota_section_old = old_quotas[key]['sections'][key2][4].split("\n")
+                    quota_section_new = value2[4].split("\n")
+
+                    if quota_section_new != quota_section_old:
+                        # Total quota
+                        quota_old = quota_section_old[0]
+                        quota_new = quota_section_new[0]
+
+                        # Reserved quota (if exists)
+                        # Old
+                        quota_res_old_dict = {}
+                        if len(quota_section_old) >= 3:
+                            # Dict to store dept names and numbers
+                            for i in range(2, len(quota_section_old)):
+                                # Split dept name from numbers
+                                quota_res_old = quota_section_old[i].split(": ")
+                                quota_res_old_dict[quota_res_old[0]] = quota_res_old[1].split("/")
+                        
+                        # New
+                        quota_res_new_dict = {}
+                        if len(quota_section_new) >= 3:
+                            # Dict to store dept names and numbers
+                            for i in range(2, len(quota_section_new)):
+                                # Split dept name from numbers
+                                quota_res_new = quota_section_new[i].split(": ")
+                                quota_res_new_dict[quota_res_new[0]] = quota_res_new[1].split("/")
                         
                         # Prepare change announcement embed: course name, section name
                         embed_quota_change = discord.Embed(
@@ -423,29 +444,68 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                         # Prepare header of change announcement
                         embed_quota_change.set_author(name="🍋 Quota changed!")
 
-                        # Display quota change
-                        changed_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+                        # Display (total) quota change
+                        changed_section_quotas = f"```ansi\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                         changed_section_quotas += f"{trim_section(key2):<8}| "
                         for i in range(4, 8):
                             changed_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
-                        changed_section_quotas += "\n```"
 
-                        # Add field
+                        # Add field (Total quotas)
+                        if quota_new > quota_old:
+                            total_quota_change_name = f"🍋 Total: {quota_old} -> {quota_new} (+{int(quota_new) - int(quota_old)})"
+                        elif quota_new < quota_old:
+                            total_quota_change_name = f"🍋 Total: {quota_old} -> {quota_new} ({int(quota_new) - int(quota_old)})"
+                        else:
+                            total_quota_change_name = f"🍋 Total: {quota_new}"
+
+                        # Display (reserved) quota change (adds and changes)
+                        for k, v in quota_res_new_dict.items():
+                            changed_section_quotas += f"\n\u001b[37;41m{'> Res.':<8}| "
+                            # Quota/enrol/avail
+                            for i in range(3):
+                                changed_section_quotas += f"{v[i]:<6}"
+                            # Dept
+                            changed_section_quotas += f"For: {k}\u001b[0m"
+
+                            # Add field (reserved quotas)
+                            if k not in quota_res_old_dict:
+                                total_quota_change_name += f"\n➡️ New reserved quota for {k}: {v[0]}"
+                            elif v[0] != quota_res_old_dict[k][0]: 
+                                # Determine sign of quota change
+                                if v[0] >= quota_res_old_dict[k][0]:
+                                    res_change_sign = "+"
+                                else:
+                                    res_change_sign = "-"
+                                # Find magnitude of quota change
+                                res_change = abs(int(v[0]) - int(quota_res_old_dict[k][0]))
+
+                                total_quota_change_name += f"\n➡️ Changed reserved quota for {k}: {quota_res_old_dict[k][0]} -> {v[0]} ({res_change_sign}{res_change})"
+                        
+                        changed_section_quotas += "\n```"
+                        
                         embed_quota_change.add_field(
-                            name=f"🍋 {quota_old} -> {quota_new}",
+                            name=total_quota_change_name,
                             value=changed_section_quotas,
                             inline=False
                         )
-
-                        # Display magnitude of quota change
-                        # Determine if quota added or removed
-                        quota_change_mag = int(quota_new) - int(quota_old)
-                        if quota_change_mag > 0:
-                            quota_change_footer = f"🍋 Added {quota_change_mag} quotas"
-                        else:
-                            quota_change_footer = f"🍋 Removed {-quota_change_mag} quotas"
-                        # Set footer
-                        embed_quota_change.set_footer(text=quota_change_footer)
+                        
+                        # Display (reserved) quota change (removals)
+                        for k, v in quota_res_old_dict.items():
+                            if k not in quota_res_new_dict:
+                                res_field = f"```\n{'> Res.':<8}| "
+                                # Quota/enrol/avail
+                                for i in range(3):
+                                    res_field += f"{v[i]:<6}"
+                                # Dept
+                                res_field += f"For: {k}"
+                                res_field += "\n```"
+                            
+                                # Add field
+                                embed_quota_change.add_field(
+                                    name=f"➡️ Reserved quota removed for {k}: {v[0]}",
+                                    value=res_field,
+                                    inline=False
+                                )
 
                         # Send the announcement
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_quota_change)
