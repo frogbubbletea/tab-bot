@@ -168,21 +168,22 @@ def compose_message(course_code, page=0):
         # Check for reserved quotas
         quota_of_section = value[4].split("\n")
         # If there is reserved quotas, display in next line
-        if len(quota_of_section) == 3:
+        if len(quota_of_section) >= 3:
+            for k in range(2, len(quota_of_section)):
             # Split dept name and quota/enrol/avail
-            reserved_quotas = quota_of_section[2].split(": ")
-            reserved_quotas_dept = reserved_quotas[0]  # dept part
-            reserved_quotas_qea = reserved_quotas[1].split("/")  # quota/enrol/avail part
+                reserved_quotas = quota_of_section[k].split(": ")
+                reserved_quotas_dept = reserved_quotas[0]  # dept part
+                reserved_quotas_qea = reserved_quotas[1].split("/")  # quota/enrol/avail part
 
-            # Display reserved quotas
-            # Show that quotas are reserved
-            quota_field += f"\u001b[0;41;37m> {'Res.':<6}| "  # Discord ANSI: https://gist.github.com/kkrypt0nn/a02506f3712ff2d1c8ca7c9e0aed7c06
-            # quota/enrol/avail
-            for j in range(3):
-                quota_field += "{:<6}".format(reserved_quotas_qea[j])
-            # dept
-            quota_field += f"For: {reserved_quotas_dept}"
-            quota_field += "\u001b[0m\n"
+                # Display reserved quotas
+                # Show that quotas are reserved
+                quota_field += f"\u001b[0;41;37m> {'Res.':<6}| "  # Discord ANSI: https://gist.github.com/kkrypt0nn/a02506f3712ff2d1c8ca7c9e0aed7c06
+                # quota/enrol/avail
+                for j in range(3):
+                    quota_field += "{:<6}".format(reserved_quotas_qea[j])
+                # dept
+                quota_field += f"For: {reserved_quotas_dept}"
+                quota_field += "\u001b[0m\n"
 
     quota_field += "```"
 
