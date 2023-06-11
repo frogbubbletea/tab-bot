@@ -445,7 +445,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                         embed_quota_change.set_author(name="🍋 Quota changed!")
 
                         # Display (total) quota change
-                        changed_section_quotas = f"```ansi\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
+                        changed_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                         changed_section_quotas += f"{trim_section(key2):<8}| "
                         for i in range(4, 8):
                             changed_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
@@ -460,12 +460,12 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
                         # Display (reserved) quota change (adds and changes)
                         for k, v in quota_res_new_dict.items():
-                            changed_section_quotas += f"\n\u001b[37;41m{'> Res.':<8}| "
+                            changed_section_quotas += f"\n{'> Res.':<8}| "
                             # Quota/enrol/avail
                             for i in range(3):
                                 changed_section_quotas += f"{v[i]:<6}"
                             # Dept
-                            changed_section_quotas += f"For: {k}\u001b[0m"
+                            changed_section_quotas += f"For: {k}"
 
                             # Add field (reserved quotas)
                             if k not in quota_res_old_dict:
