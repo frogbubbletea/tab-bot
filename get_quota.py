@@ -379,7 +379,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                 # 🍅 New section!
                 if key2 not in old_quotas[key]['sections']:
                     # Quota of the new section
-                    quota_new = value2[4].split("\n", 1)[0]
+                    quota_new = value2[4].split("\n")
                     # await channels.get(key[0: 4], channels['other']).send(f"🍅 **New section!**\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
                     
                     # Prepare change announcement embed: course name, section name
@@ -390,11 +390,29 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # Prepare header of change announcement
                     embed_new_section.set_author(name="🍅 New section!")
 
-                    # Display quota of section
+                    # Display quota of section: Total
                     new_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                     new_section_quotas += f"{trim_section(key2):<8}| "
                     for i in range(4, 8):
-                        new_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
+                        new_section_quotas += '{:<6}'.format(value2[i].split("\n")[0])
+                    
+                    # Display quota of section: reserved
+                    new_res_dict = {}
+                    if len(quota_new) >= 3:
+                        # Dict to store dept names and numbers
+                        for i in range(2, len(quota_new)):
+                            # Split dept name from numbers
+                            quota_new_res = quota_new[i].split(": ")
+                            new_res_dict[quota_new_res[0]] = quota_new_res[1].split("/")
+                    
+                    for k, v in new_res_dict.items():
+                        new_section_quotas += f"\n{'> Res.':<8}| "
+                        # Quota/enrol/avail
+                        for i in range(3):
+                            new_section_quotas += f"{v[i]:<6}"
+                        # Dept
+                        new_section_quotas += f"For: {k}"
+
                     new_section_quotas += "\n```"
 
                     # Add field
@@ -769,11 +787,30 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # Prepare header of change announcement
                     embed_delete_section.set_author(name="🍹 Section deleted!")
 
-                    # Display quota of section
+                    # Display quota of section: total
                     delete_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                     delete_section_quotas += f"{trim_section(key4):<8}| "
                     for i in range(4, 8):
                         delete_section_quotas += '{:<6}'.format(value4[i].split("\n", 1)[0])
+                    
+                    # Display quota of section: reserved
+                    quota_delete = value4[4].split("\n")
+                    delete_res_dict = {}
+                    if len(quota_delete) >= 3:
+                        # Dict to store dept names and numbers
+                        for i in range(2, len(quota_delete)):
+                            # Split dept name from numbers
+                            quota_delete_res = quota_delete[i].split(": ")
+                            delete_res_dict[quota_delete_res[0]] = quota_delete_res[1].split("/")
+                    
+                    for k, v in delete_res_dict.items():
+                        delete_section_quotas += f"\n{'> Res.':<8}| "
+                        # Quota/enrol/avail
+                        for i in range(3):
+                            delete_section_quotas += f"{v[i]:<6}"
+                        # Dept
+                        delete_section_quotas += f"For: {k}"
+
                     delete_section_quotas += "\n```"
                     
                     # Add field
