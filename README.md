@@ -35,6 +35,7 @@ Hill can also be added to other servers!
 | Tab: the date & time of a section is changed | ![Tab sends a message when the date and time of a section is changed](sample_screenshots/tab/time_changed.png) |
 | Tab: the venue of a section is changed | ![Tab sends a message when the venue of a section is changed](sample_screenshots/tab/venue_changed.png) |
 | Tab: the instructor of a section is changed | ![Tab sends a message when the instructor of a section is changed](sample_screenshots/tab/inst_changed.png) |
+| Tab: the remarks of a section is changed | ![Tab sends a message when the remarks of a section is changed](sample_screenshots/tab/remarks_changed.png) |
 | Tab: a course is deleted | ![Tab sends a message when a course is deleted](sample_screenshots/tab/course_deleted.png) |
 | Tab: a section (of a course) is deleted | ![Tab sends a message when a section (of a course) is deleted](sample_screenshots/tab/section_deleted.png) |
 |||
