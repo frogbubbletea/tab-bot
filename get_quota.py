@@ -669,6 +669,61 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     if inst_deltas != ([], []):
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change)
                         changed = True
+                    
+                    # 🫐 Remarks changed!
+                    # Initialize list of values
+                    remarks_list_new = value2[8].split("\n")
+                    remarks_list_old = old_quotas[key]['sections'][key2][8].split("\n")
+                    # Remove empty list elements, including special space characters
+                    # Remove "> " from the beginning of line too
+                    remarks_list_new = [r.strip("> ") for r in remarks_list_new if r not in ['', '\xa0', '\u00a0']]
+                    remarks_list_old = [r.strip("> ") for r in remarks_list_old if r not in ['', '\xa0', '\u00a0']]
+
+                    # Prepare change announcement text: Header, course name, section name, section ID
+                    embed_remarks_change = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0x8aadf4  # Blue
+                    )
+                    # Prepare header of change announcement
+                    embed_remarks_change.set_author(name="🫐 Remarks changed!")
+
+                    # Check additions and removals
+                    remarks_deltas = list_diffs(remarks_list_new, remarks_list_old)
+                    remarks_diffed = diff_highlight(remarks_list_new, remarks_list_old)
+
+                    # Add old remarks field
+                    remarks_old_field = "```\n"  # Field text becomes "diff" if there is no content
+                    if remarks_diffed[1] != []:
+                        remarks_old_field = "```diff\n"  # Diff syntax highlighting
+                    remarks_old_field += "\n".join(remarks_diffed[1])
+                    remarks_old_field += "\n```"
+                    # Add field to embed
+                    embed_remarks_change.add_field(
+                        name="🫐 Old",
+                        value=remarks_old_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Add new remarks field
+                    remarks_new_field = "```\n"  # Field text becomes "diff" if there is no content
+                    if remarks_diffed[0] != []:
+                        remarks_new_field = "```diff\n"  # Diff syntax highlighting
+                    remarks_new_field += "\n".join(remarks_diffed[0])
+                    remarks_new_field += "\n```"
+                    # Add field to embed
+                    embed_remarks_change.add_field(
+                        name="🫐 New",
+                        value=remarks_new_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Display number of changes
+                    embed_remarks_change.set_footer(text=f"🫐 {len(remarks_deltas[0])} additions, {len(remarks_deltas[1])} removals")
+
+                    # If there is remarks change, send the announcement
+                    if remarks_deltas != ([], []):
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_remarks_change)
+                        changed = True
 
     for key3, value3 in old_quotas.items():
         # Skip "time" entry
