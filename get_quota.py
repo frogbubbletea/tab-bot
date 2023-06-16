@@ -495,8 +495,10 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             changed_section_quotas += f"For: {k}"
 
                             # Add field (reserved quotas)
+                            # New reserved quota
                             if k not in quota_res_old_dict:
-                                total_quota_change_name += f"\n➡️ New reserved quota for {k}: {v[0]}"
+                                total_quota_change_name += f"\n➡️ **New!** {k}: {v[0]}"
+                            # Changed reserved quota
                             elif v[0] != quota_res_old_dict[k][0]: 
                                 # Determine sign of quota change
                                 if v[0] >= quota_res_old_dict[k][0]:
@@ -529,7 +531,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             
                                 # Add field
                                 embed_quota_change.add_field(
-                                    name=f"➡️ Reserved quota removed for {k}: {v[0]}",
+                                    name=f"➡️ **Removed!** {k}: {v[0]}",
                                     value=res_field,
                                     inline=False
                                 )
