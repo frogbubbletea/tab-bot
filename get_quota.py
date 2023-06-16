@@ -431,30 +431,38 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     quota_section_old = old_quotas[key]['sections'][key2][4].split("\n")
                     quota_section_new = value2[4].split("\n")
 
-                    if quota_section_new != quota_section_old:
-                        # Total quota
-                        quota_old = quota_section_old[0]
-                        quota_new = quota_section_new[0]
+                    # Total quota
+                    quota_old = quota_section_old[0]
+                    quota_new = quota_section_new[0]
 
-                        # Reserved quota (if exists)
-                        # Old
-                        quota_res_old_dict = {}
-                        if len(quota_section_old) >= 3:
-                            # Dict to store dept names and numbers
-                            for i in range(2, len(quota_section_old)):
-                                # Split dept name from numbers
-                                quota_res_old = quota_section_old[i].split(": ")
-                                quota_res_old_dict[quota_res_old[0]] = quota_res_old[1].split("/")
-                        
-                        # New
-                        quota_res_new_dict = {}
-                        if len(quota_section_new) >= 3:
-                            # Dict to store dept names and numbers
-                            for i in range(2, len(quota_section_new)):
-                                # Split dept name from numbers
-                                quota_res_new = quota_section_new[i].split(": ")
-                                quota_res_new_dict[quota_res_new[0]] = quota_res_new[1].split("/")
-                        
+                    # Reserved quota (if exists)
+                    # Old
+                    quota_res_old_dict = {}
+                    if len(quota_section_old) >= 3:
+                        # Dict to store dept names and numbers
+                        for i in range(2, len(quota_section_old)):
+                            # Split dept name from numbers
+                            quota_res_old = quota_section_old[i].split(": ")
+                            quota_res_old_dict[quota_res_old[0]] = quota_res_old[1].split("/")
+                    
+                    # New
+                    quota_res_new_dict = {}
+                    if len(quota_section_new) >= 3:
+                        # Dict to store dept names and numbers
+                        for i in range(2, len(quota_section_new)):
+                            # Split dept name from numbers
+                            quota_res_new = quota_section_new[i].split(": ")
+                            quota_res_new_dict[quota_res_new[0]] = quota_res_new[1].split("/")
+
+                    # Check if reserved quotas changed
+                    quota_res_old_compare = {}
+                    quota_res_new_compare = {}
+                    for k, v in quota_res_old_dict.items():
+                        quota_res_old_compare[k] = v[0]
+                    for k, v in quota_res_new_dict.items():
+                        quota_res_new_compare[k] = v[0]
+                    
+                    if (quota_new != quota_old) or (quota_res_old_compare != quota_res_new_compare):
                         # Prepare change announcement embed: course name, section name
                         embed_quota_change = discord.Embed(
                             title=f"{value.get('title', 'Error')}: {key2}",
