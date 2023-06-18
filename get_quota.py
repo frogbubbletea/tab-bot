@@ -613,7 +613,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                                 # Find magnitude of quota change
                                 res_change = abs(int(v[0]) - int(quota_res_old_dict[k][0]))
 
-                                total_quota_change_name += f"\n➡️ Changed reserved quota for {k}: {quota_res_old_dict[k][0]} -> {v[0]} ({res_change_sign}{res_change})"
+                                total_quota_change_name += f"\n↔️ **Changed!** {k}: {quota_res_old_dict[k][0]} -> {v[0]} ({res_change_sign}{res_change})"
                         
                         changed_section_quotas += "\n```"
                         
@@ -636,7 +636,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             
                                 # Add field
                                 embed_quota_change.add_field(
-                                    name=f"➡️ **Removed!** {k}: {v[0]}",
+                                    name=f"⬅️ **Removed!** {k}: {v[0]}",
                                     value=res_field,
                                     inline=False
                                 )
