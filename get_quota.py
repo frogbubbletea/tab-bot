@@ -375,6 +375,111 @@ async def check_diffs(new_quotas=None, old_quotas=None):
             changed = True
 
         else:
+            # 🥥 Course info changed!
+            # Initialize dicts of course info
+            info_compare_old = old_quotas[key]['info']
+            info_compare_new = new_quotas[key]['info']
+
+            # Check course info additions and changes
+            for k, v in info_compare_new.items():
+                # Send 1 message for every change
+                embed_course_info_change = discord.Embed(
+                    title=f"{value.get('title', 'Error')}",
+                    color=0xcad3f5  # Text
+                )
+                embed_course_info_change.set_author(name="🥥 Course info changed!")
+
+                # Send message for new course info
+                if k not in info_compare_old:
+                    # Split info into multiple fields
+                    for v_chunk in range(int(len(v) / 1014) + 1):  # Leave room for MD codeblock characters
+                        if v_chunk == 0:
+                            k_name = "🥥 New: " + k.replace("\n", " ").capitalize()
+                        else:
+                            k_name = k.replace("\n", " ").capitalize() + " (cont.)"
+                        
+                        try:
+                            embed_course_info_change.add_field(
+                                name=k_name,
+                                value=f"```\n{v[1014 * v_chunk: 1014 * (v_chunk + 1)]}\n```",
+                                inline=False
+                            )
+                        except IndexError:
+                            embed_course_info_change.add_field(
+                                name=k_name,
+                                value=f"```\n{v[1014 * v_chunk: ]}\n```",
+                                inline=False
+                            )
+
+                    # Send the message
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    changed = True
+
+                # Send message for changed course info
+                elif v != info_compare_old[k]:
+                    # Split info into multiple fields
+                    for piece_k, piece_v in {"⬅️ Old": info_compare_old[k], "➡️ New": v}.items():
+                        for v_chunk in range(int(len(piece_v) / 1014) + 1):
+                            piece_k_name = ""
+                            # "Heading": Display part of course info changed
+                            if piece_k == "⬅️ Old" and v_chunk == 0:
+                                piece_k_name = "🥥 Changed: " + k.replace("\n", " ").capitalize() + "\n"
+                            piece_k_name += piece_k
+                            if v_chunk > 0:
+                                piece_k_name += " (cont.)"
+                            
+                            try:
+                                embed_course_info_change.add_field(
+                                    name=piece_k_name,
+                                    value=f"```\n{piece_v[1014 * v_chunk: 1014 * (v_chunk + 1)]}\n```",
+                                    inline=False
+                                )
+                            except IndexError:
+                                embed_course_info_change.add_field(
+                                    name=piece_k_name,
+                                    value=f"```\n{piece_v[1014 * v_chunk: ]}\n```",
+                                    inline=False
+                                )
+                        
+                    # Send the message
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    changed = True
+                
+            # Check course info removals
+            for k, v in info_compare_old.items():
+                # Send 1 message for every removal
+                embed_course_info_change = discord.Embed(
+                    title=f"{value.get('title', 'Error')}",
+                    color=0xcad3f5  # Text
+                )
+                embed_course_info_change.set_author(name="🥥 Course info changed!")
+
+                # Send message for removed course info
+                if k not in info_compare_new:
+                    # Split info into multiple fields
+                    for v_chunk in range(int(len(v) / 1014) + 1):  # Leave room for MD codeblock characters
+                        if v_chunk == 0:
+                            k_name = "🥥 Removed: " + k.replace("\n", " ").capitalize()
+                        else:
+                            k_name = k.replace("\n", " ") + " (cont.)"
+                        
+                        try:
+                            embed_course_info_change.add_field(
+                                name=k_name,
+                                value=f"```\n{v[1014 * v_chunk: 1014 * (v_chunk + 1)]}\n```",
+                                inline=False
+                            )
+                        except IndexError:
+                            embed_course_info_change.add_field(
+                                name=k_name,
+                                value=f"```\n{v[1014 * v_chunk: ]}\n```",
+                                inline=False
+                            )
+
+                    # Send the message
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    changed = True
+
             for key2, value2 in value['sections'].items():
                 # 🍅 New section!
                 if key2 not in old_quotas[key]['sections']:
