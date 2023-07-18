@@ -1,5 +1,5 @@
 # get_quota.py
-import requests
+import requests  # Requires requests 2.29.0!
 import bs4
 
 import discord
@@ -308,9 +308,9 @@ def compose_sections(course_code, page=0):
             remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
             # Display the remarks
             section_field += "Remarks:\n"  
-            section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
+            #section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
             section_field += "\n".join(remarks_list)
-            section_field += "\u001b[0m"  # Coloring end
+            #section_field += "\u001b[0m"  # Coloring end
             section_field += "\n"
 
         section_field += "```"
@@ -950,7 +950,7 @@ async def download_quotas(current_loop):
         soup = bs4.BeautifulSoup(page.content, "html.parser")
     
         letters = soup.select('.depts')[0]
-    except:
+    except Exception as error:
         return update_time()
 
     quotas = {}
