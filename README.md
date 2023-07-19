@@ -25,8 +25,6 @@ Hill can also be added to other servers!
 ---
 
 ## 🖼️ Screenshots
-> ⚠️ The following screenshots are for **illustrative** purposes only! Changes depicted in the screenshots are **made up**!
-
 |||
 | :---         | :---    |
 | Tab: a new course is added | ![Tab sends a message when a new course is added](sample_screenshots/tab/new_course.png) |
