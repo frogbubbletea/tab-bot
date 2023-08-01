@@ -109,7 +109,8 @@ subjects_channels = {
     "UGOD": 1072405165975539762,
     "UROP": 1072405199399948319,
     "WBBA": 1072405215178932254,
-    "other": 1072780254306906112
+    "other": 1072780254306906112,
+    "error": 1135779590443384872
 }
 
 # Uncomment when testing output
@@ -117,7 +118,8 @@ subjects_channels = {
 # subjects_channels = {
 #     "ENGG": 1115147111974047744,
 #     "MATH": 1115147149911531591,
-#     "other": 1114416691649196032
+#     "other": 1114416691649196032,
+#     "error": 1135779590443384872
 # }
 
 async def find_channels(bot):

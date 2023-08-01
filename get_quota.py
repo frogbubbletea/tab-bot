@@ -8,6 +8,7 @@ import os
 import json
 from datetime import datetime, timezone
 import re
+import traceback
 
 import config
 import subject_channels
@@ -66,6 +67,10 @@ channels = None
 async def get_channels(bot):
     global channels
     channels = await subject_channels.find_channels(bot)
+
+# Send error message during quota update loop
+async def send_loop_exception(current_loop, error_type, error_msg):
+    await channels.get("error").send(f"👺 Error in quota update loop `{current_loop}`:\n{error_type}```\n{error_msg}\n```")
 
 def open_quotas():
     try:
@@ -950,7 +955,13 @@ async def download_quotas(current_loop):
         soup = bs4.BeautifulSoup(page.content, "html.parser")
     
         letters = soup.select('.depts')[0]
-    except Exception as error:
+    except Exception as error:  # Failed to connect to server!
+        # Print exception to console
+        traceback.print_exc()
+
+        # Send exception to errors channel
+        await send_loop_exception(current_loop, "Failed to connect to server!", error)
+
         return update_time()
 
     quotas = {}
@@ -960,8 +971,13 @@ async def download_quotas(current_loop):
 
         try:
             sub_page = requests.get(sub_url, timeout=10)
-        except:
-            print("Timed out!")
+        except Exception as e:  # Timed out!
+            # Print exception to console
+            traceback.print_exc()
+
+            # Send exception to errors channel
+            send_loop_exception(current_loop, "Timed out!", e)
+            
             return update_time()
 
         sub_soup = bs4.BeautifulSoup(sub_page.content, "html.parser")
