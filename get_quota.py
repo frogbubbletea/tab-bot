@@ -170,9 +170,6 @@ def compose_message(course_code, page=0):
                                 description=sect_matching,
                                 color=config.color_success,
                                 timestamp=time_from_stamp(quotas['time']))  # Quota update time
-    
-    # if sect_matching is not None:
-    #     embed_quota.description = sect_matching
 
     quota_field = f"```ansi\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
 
