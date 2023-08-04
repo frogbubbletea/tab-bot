@@ -62,6 +62,13 @@ def diff_highlight(new, old):
     old = [("-" + x.replace("\n", "\n-")) if x in diff_tuple[1] else (" " + x.replace("\n", "\n ")) for x in old]
     return new, old  # Returns a tuple of new, old with diff highlighting
 
+# Find section matching message in a course
+def find_sect_matching(course_dict):
+    sect_matching = "\u200b"
+    if "MATCHING" in course_dict['info'].keys():
+        sect_matching = "ℹ️ " + course_dict['info']['MATCHING'].strip("[]")
+    return sect_matching
+
 # Dict containing all subject channels
 channels = None
 async def get_channels(bot):
@@ -155,8 +162,12 @@ def compose_message(course_code, page=0):
     except IndexError:
         sections_paged = list(course_dict['sections'].items())[page_size * page: ]
 
+    # Include section matching message if there is one
+    sect_matching = find_sect_matching(course_dict)
+    
     # Compose list
     embed_quota = discord.Embed(title=f"{course_dict['title']}",
+                                description=sect_matching,
                                 color=config.color_success,
                                 timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
@@ -222,6 +233,10 @@ def compose_info(course_code):
                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     for key, value in course_dict['info'].items():
+        # Skip section matching message
+        if key == "MATCHING":
+            continue
+
         key = key.capitalize()
         key = key.replace("\n", " ")
 
@@ -259,7 +274,11 @@ def compose_sections(course_code, page=0):
         if course_code == "time":
             return "key"
     
+    # Include section matching message if there is one
+    sect_matching = find_sect_matching(course_dict)
+    
     embed_sections = discord.Embed(title=f"{course_dict['title']}",
+                                   description=sect_matching,
                                    color=config.color_success,
                                    timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
