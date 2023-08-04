@@ -998,7 +998,14 @@ async def download_quotas(current_loop):
             # Course info start
             course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
             course_info_rows = course_info.select('tr')
+
             info_dict = {}
+
+            # Special course info: matching
+            matching_info = course.find("div", {"class": "matching"})
+            if matching_info is not None:
+                matching_info = matching_info.get_text()
+                info_dict["MATCHING"] = matching_info
 
             for row in course_info_rows:
                 try:
