@@ -253,7 +253,7 @@ def compose_info(course_code):
                 embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
 
     embed_info.set_footer(text=f"🕒 Last updated")
-    embed_info.set_author(name="🍊 Information for")
+    embed_info.set_author(name="🍊 Information about")
 
     return embed_info
 
