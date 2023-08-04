@@ -64,7 +64,7 @@ def diff_highlight(new, old):
 
 # Find section matching message in a course
 def find_sect_matching(course_dict):
-    sect_matching = "\u200b"
+    sect_matching = None
     if "MATCHING" in course_dict['info'].keys():
         sect_matching = "ℹ️ " + course_dict['info']['MATCHING'].strip("[]")
     return sect_matching
@@ -171,6 +171,9 @@ def compose_message(course_code, page=0):
                                 color=config.color_success,
                                 timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
+    # if sect_matching is not None:
+    #     embed_quota.description = sect_matching
+
     quota_field = f"```ansi\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
 
     for key, value in sections_paged:
