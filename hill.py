@@ -218,12 +218,21 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
     elif embed_list == "key":
         await interaction.edit_original_response(content="⚠️ No courses found with this prefix!")
     else:
-        # try:
         view = QuotaPage(mode="l", course_code=prefix)
         view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(prefix, "l")))
         await interaction.edit_original_response(embed=embed_list, view=view)
-        # except:  # Unlikely scenario: course titles are short
-        #     await interaction.edit_original_response(content="⚠️ Error: response too long!")
+
+# Autocomplete for "list" command
+@list.autocomplete('prefix')
+async def list_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    prefix_list = get_quota.get_prefix_list()
+    data = [app_commands.Choice(name=prefix, value=prefix)
+            for prefix in prefix_list if current.replace(" ", "").upper() in prefix.upper()
+            ][0: 25]
+    return data
 
 # Slash commands end
 
