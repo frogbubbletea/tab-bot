@@ -1,4 +1,4 @@
-# v1.6.2
+# v1.7
 # bot.py
 import discord
 from discord import app_commands
