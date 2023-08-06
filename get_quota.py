@@ -79,6 +79,30 @@ async def get_channels(bot):
 async def send_loop_exception(current_loop, error_type, error_msg):
     await channels.get("error").send(f"👺 Error in quota update loop `{current_loop}`:\n{error_type}```\n{error_msg}\n```")
 
+# Get list of all course codes
+def get_course_list():
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return []
+    
+    courses = list(quotas.keys())
+    courses.remove('time')  # Remove update time entry
+    return courses
+
+# Get list of all course code prefixes
+def get_prefix_list():
+    # Get course list
+    courses = get_course_list()
+
+    # Trim all course codes to prefix only
+    prefix_list = [x[0: 4] for x in courses]  # All prefixes are 4 letters long
+    # Remove duplicates
+    prefix_list = list(dict.fromkeys(prefix_list))
+
+    return prefix_list
+
 def open_quotas():
     try:
         quotas = open('quotas.json', encoding='utf-8')
@@ -347,6 +371,61 @@ def compose_sections(course_code, page=0):
     embed_sections.set_author(name="🍊 Sections of")
 
     return embed_sections
+
+# Compose message of all courses with given prefix for "list" command
+def compose_list(prefix, page=0):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return "unavailable"  # Error code: quotas file is unavailable
+    
+    # Check if prefix is valid
+    prefix_list = get_prefix_list()
+    if prefix not in prefix_list:
+        return "key"  # Error code: prefix is invalid
+    
+    # Get dict of all courses with prefix
+    prefix_courses = {k: v for k, v in quotas.items() if prefix in k}
+
+    # Prepare embed to display courses in
+    embed_list = discord.Embed(title=prefix,
+                               color=config.color_success,
+                               timestamp=time_from_stamp(quotas['time']))  # Quota update time
+
+    # Calculate max page index
+    page_size = 5
+    max_page = find_max_page(prefix_courses, page_size)
+
+    # Check if page number is valid
+    if page < 0:
+        return "p0"  # Error code: first page reached
+    elif page > max_page:
+        return "pmax"  # Error code: last page reached
+    
+    # Cut out one page of data
+    try:
+        list_paged = list(prefix_courses.items())[page_size * page: page_size * (page + 1)]
+    except IndexError:
+        list_paged = list(prefix.items())[page_size * page: ]
+    
+    # Format the data into the embed
+    for key, value in list_paged:
+        course_code = value['title'][0: 10]  # Course codes are max 9 chars long and followed by a space
+        course_title = value['title'][12: ]  # Course titles have 1 leading space
+
+        # Add course to embed as field
+        embed_list.add_field(name=f"🍊 {course_code}",
+                             value=course_title,
+                             inline=False
+        )
+    
+    # Embed timestamp (update time) is shown behind footer
+    embed_list.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
+    # Header message
+    embed_list.set_author(name="🍊 Courses with prefix")
+
+    return embed_list
 
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):

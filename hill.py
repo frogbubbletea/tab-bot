@@ -66,6 +66,8 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page - 1)
         elif self.mode == "s":
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page - 1)
+        elif self.mode == "l":
+            embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page - 1)
         # No pages for info command
         # elif self.mode == "i":
         #     button.disabled = True
@@ -86,6 +88,8 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page + 1)
         elif self.mode == "s":
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page + 1)
+        elif self.mode == "l":
+            embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page + 1)
         # No pages for info command
         # elif self.mode == "i":
         #     button.disabled = True
@@ -101,20 +105,12 @@ class QuotaPage(discord.ui.View):
                 self.page += 1
 
 # Get source URL on original UST course quota website for "Source" button
-def get_source_url(course_code):
-    source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{get_quota.semester_code}/subject/{course_code[0: 4]}#{course_code}"
+def get_source_url(course_code, mode=None):
+    if mode == "l":  # /list command, link to top of website
+        source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{get_quota.semester_code}/subject/{course_code}"
+    else:
+        source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{get_quota.semester_code}/subject/{course_code[0: 4]}#{course_code}"
     return source_url
-
-# Get course list for commands autocomplete
-def get_course_list():
-    quotas = get_quota.open_quotas()
-
-    # Check if quotas file is available
-    if not get_quota.check_quotas_validity():
-        return []
-    
-    courses = list(quotas.keys())
-    return courses
 
 # "quota" command
 # Lists quotas of all sections of a course
@@ -200,11 +196,34 @@ async def sections_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
-    courses = get_course_list()
+    courses = get_quota.get_course_list()
     data = [app_commands.Choice(name=course, value=course)
             for course in courses if current.replace(" ", "").upper() in course.upper()
             ][0: 25]
     return data
+
+# "list" command
+# List all courses with given prefix
+@bot.tree.command(description="List all courses with a given prefix!", guilds=bot.guilds)
+async def list(interaction: discord.Interaction, prefix: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    prefix = prefix.replace(" ", "").upper()
+    embed_list = get_quota.compose_list(prefix)
+
+    # Error: Course data unavailable
+    if embed_list == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: invalid prefix
+    elif embed_list == "key":
+        await interaction.edit_original_response(content="⚠️ No courses found with this prefix!")
+    else:
+        # try:
+        view = QuotaPage(mode="l", course_code=prefix)
+        view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(prefix, "l")))
+        await interaction.edit_original_response(embed=embed_list, view=view)
+        # except:  # Unlikely scenario: course titles are short
+        #     await interaction.edit_original_response(content="⚠️ Error: response too long!")
 
 # Slash commands end
 
