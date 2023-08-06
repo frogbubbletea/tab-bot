@@ -342,10 +342,28 @@ def compose_sections(course_code, page=0):
         # Add strings to field
         # Add strings row by row
         for i in range(len(time_list)):
-            section_field += f"{'Time':<6}| {time_list[i]}\n"
-            section_field += f"{'Venue':<6}| {venue_list[i]}\n"
-            section_field += f"{'By':<6}| {instructor_list[i]}\n"
-            section_field += "\n"
+            # Field character limit protection: buffer new rows
+            section_field_pending = ""
+
+            section_field_pending += f"{'Time':<6}| {time_list[i]}\n"
+            section_field_pending += f"{'Venue':<6}| {venue_list[i]}\n"
+            section_field_pending += f"{'By':<6}| {instructor_list[i]}\n"
+            section_field_pending += "\n"
+
+            # Count chars before adding to field
+            if len(section_field) + len(section_field_pending) > 1020:  # end of codeblock is 4 chars long
+                # Send current block to field first
+                section_field += "\n```"
+                embed_sections.add_field(name=f"🍊 {key}",
+                                 value=section_field,
+                                 inline=False)
+                # Reset field for next block
+                section_field = "```\n" + section_field_pending
+            else:  # Char count under limit: add new row to field
+                section_field += section_field_pending
+
+        # Buffer remarks
+        section_field_pending = ""
 
         # Add remarks
         # There will always be at most 1 remark per section
@@ -355,11 +373,23 @@ def compose_sections(course_code, page=0):
             # Remove empty lines
             remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
             # Display the remarks
-            section_field += "Remarks:\n"  
+            section_field_pending += "Remarks:\n"  
             #section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
-            section_field += "\n".join(remarks_list)
+            section_field_pending += "\n".join(remarks_list)
             #section_field += "\u001b[0m"  # Coloring end
-            section_field += "\n"
+            section_field_pending += "\n"
+
+        # Field character limit protection: count chars before adding remarks
+        if len(section_field) + len(section_field_pending) > 1020:
+            # Send current block to field first
+            section_field += "\n```"
+            embed_sections.add_field(name=f"🍊 {key}",
+                                 value=section_field,
+                                 inline=False)
+            # Reset field for next block
+            section_field = "```\n" + section_field_pending
+        else:  # Char count under limit: add remarks to field
+            section_field += section_field_pending
 
         section_field += "```"
         embed_sections.add_field(name=f"🍊 {key}",
