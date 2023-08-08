@@ -204,11 +204,13 @@ async def sections_autocomplete(
 
 # "list" command
 # List all courses with given prefix
-@bot.tree.command(description="List all courses with a given prefix!", guilds=bot.guilds)
+@bot.tree.command(description="List all courses with a given prefix/area!", guilds=bot.guilds)
 async def list(interaction: discord.Interaction, prefix: str) -> None:
     await interaction.response.defer(thinking=True)
+    cc_areas = get_quota.get_cc_areas()
 
-    prefix = prefix.replace(" ", "").upper()
+    if prefix not in cc_areas:  # Do not uppercase common core area arguments
+        prefix = prefix.replace(" ", "").upper()
     embed_list = get_quota.compose_list(prefix)
 
     # Error: Course data unavailable
@@ -219,7 +221,9 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
         await interaction.edit_original_response(content="⚠️ No courses found with this prefix!")
     else:
         view = QuotaPage(mode="l", course_code=prefix)
-        view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(prefix, "l")))
+        # Do not add source link if common core is given
+        if prefix not in cc_areas:
+            view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(prefix, "l")))
         await interaction.edit_original_response(embed=embed_list, view=view)
 
 # Autocomplete for "list" command
@@ -229,8 +233,10 @@ async def list_autocomplete(
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
     prefix_list = get_quota.get_prefix_list()
+    cc_areas = get_quota.get_cc_areas()
+    prefix_list.extend(cc_areas)
     data = [app_commands.Choice(name=prefix, value=prefix)
-            for prefix in prefix_list if current.replace(" ", "").upper() in prefix.upper()
+            for prefix in prefix_list if current.replace(" ", "").upper() in prefix.replace(" ", "").upper()
             ][0: 25]
     return data
 

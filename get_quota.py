@@ -103,6 +103,27 @@ def get_prefix_list():
 
     return prefix_list
 
+# Get list of all common core areas
+def get_cc_areas():
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return []
+    
+    # Remove update time entry
+    quotas.pop("time")  
+
+    cc_areas = [x['info']['ATTRIBUTES'] for x in quotas.values() if 'ATTRIBUTES' in x['info']]
+    # Split attributes lines
+    cc_areas = sum([y.split("\n") for y in cc_areas], [])
+    # Remove duplicates
+    cc_areas = list(dict.fromkeys(cc_areas))
+    # Remove non CC attributes
+    cc_areas = [z for z in cc_areas if "Common Core" in z]
+
+    return cc_areas
+
 def open_quotas():
     try:
         quotas = open('quotas.json', encoding='utf-8')
@@ -410,16 +431,26 @@ def compose_list(prefix, page=0):
     if not check_quotas_validity():
         return "unavailable"  # Error code: quotas file is unavailable
     
+    # Get list of common core areas
+    cc_areas = get_cc_areas()
+
     # Check if prefix is valid
     prefix_list = get_prefix_list()
-    if prefix not in prefix_list:
+    if (prefix not in prefix_list) and (prefix not in cc_areas):
         return "key"  # Error code: prefix is invalid
     
-    # Get dict of all courses with prefix
-    prefix_courses = {k: v for k, v in quotas.items() if prefix in k}
+    # Get dict of all courses with prefix/CC area
+    if prefix in cc_areas:
+        prefix_courses = {k: v for k, v in quotas.items() if k != "time" and prefix in v.get('info').get('ATTRIBUTES', '')}
+        list_title = prefix.replace("Common Core", "")  # "Common Core" will be displayed in header (author)
+        list_header = "🍊 Common Core courses in"  # Embed header (author) text
+    else:
+        prefix_courses = {k: v for k, v in quotas.items() if prefix in k}
+        list_title = prefix  # Change nothing
+        list_header = "🍊 Courses with prefix"
 
     # Prepare embed to display courses in
-    embed_list = discord.Embed(title=prefix,
+    embed_list = discord.Embed(title=list_title,
                                color=config.color_success,
                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
 
@@ -453,7 +484,7 @@ def compose_list(prefix, page=0):
     # Embed timestamp (update time) is shown behind footer
     embed_list.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
     # Header message
-    embed_list.set_author(name="🍊 Courses with prefix")
+    embed_list.set_author(name=list_header)
 
     return embed_list
 
