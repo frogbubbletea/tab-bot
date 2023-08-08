@@ -17,8 +17,7 @@ Hill uses data collected by Tab to provide course info on demand! Using its slas
 - Quotas
 - Sections (schedules, venues, instructors)
 - General information (pre-reqs, exclusions, descriptions)
-
-of a course!
+- Search courses by course code prefix and Common Core area
 
 Hill can also be added to other servers!
 
@@ -41,6 +40,8 @@ Hill can also be added to other servers!
 | Using Hill's command: `/info` | ![Using Hill's command: `/info`](sample_screenshots/hill/info.png) |
 | Using Hill's command: `/sections` | ![Using Hill's command: `/sections`](sample_screenshots/hill/sections.png) |
 | Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/quota.png) |
+| Using Hill's command: `/list` to show all courses with given prefix | ![Using Hill's command: `/list` to show all courses with given prefix](sample_screenshots/hill/list_prefix.png) |
+| Using Hill's command: `/list` to show all Common Core courses in a given area | ![Using Hill's command: `/list` to show all Common Core courses in a given area](sample_screenshots/hill/list_cc.png) |
 ---
 
 ## 🌟 Credits
