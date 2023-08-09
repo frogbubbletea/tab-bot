@@ -768,9 +768,9 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             if k not in quota_res_old_dict:
                                 total_quota_change_name += f"\n➡️ Reserved ({k}): {v[0]} (New)"
                             # Changed reserved quota
-                            elif v[0] != quota_res_old_dict[k][0]: 
+                            elif int(v[0]) != int(quota_res_old_dict[k][0]): 
                                 # Determine sign of quota change
-                                if v[0] >= quota_res_old_dict[k][0]:
+                                if int(v[0]) >= int(quota_res_old_dict[k][0]):
                                     res_change_sign = "+"
                                 else:
                                     res_change_sign = "-"
