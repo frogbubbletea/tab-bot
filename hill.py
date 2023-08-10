@@ -106,7 +106,7 @@ class QuotaPage(discord.ui.View):
 
 # "quota" command
 # Lists quotas of all sections of a course
-@bot.tree.command(description="Get quotas for a course!", guilds=bot.guilds)
+@bot.tree.command(description="Get quotas for a course!")
 async def quota(interaction: discord.Interaction, course_code: str):
     await interaction.response.defer(thinking=True)
 
@@ -132,7 +132,7 @@ async def quota(interaction: discord.Interaction, course_code: str):
 
 # "info" command
 # Shows course info
-@bot.tree.command(description="Get the information of a course!", guilds=bot.guilds)
+@bot.tree.command(description="Get the information of a course!")
 async def info(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -156,7 +156,7 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
 
 # "sections" command
 # Lists sections of a course and their times, venues and instructors
-@bot.tree.command(description="Get sections of a course!", guilds=bot.guilds)
+@bot.tree.command(description="Get sections of a course!")
 async def sections(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -196,7 +196,7 @@ async def sections_autocomplete(
 
 # "list" command
 # List all courses with given prefix
-@bot.tree.command(description="List all courses with a given prefix/area!", guilds=bot.guilds)
+@bot.tree.command(description="List all courses with a given prefix/area!")
 async def list(interaction: discord.Interaction, prefix: str) -> None:
     await interaction.response.defer(thinking=True)
     cc_areas = get_quota.get_cc_areas()
@@ -239,7 +239,7 @@ async def list_autocomplete(
 # Syncs command tree with Discord
 @bot.command()
 async def sync(ctx):
-    if ctx.author.id == 740098404688068641:
+    if ctx.author.id == 740098404688068641:  # Owner's ID
         await bot.tree.sync()
         await ctx.send("👍 Commands synced!")
     else:
