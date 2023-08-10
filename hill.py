@@ -249,7 +249,7 @@ async def servers(interaction: discord.Interaction) -> None:
     guild_list_file.close()
 
     # Send the txt file
-    await interaction.edit_original_response(content=f"Bot is connected to {len(bot.guilds)} servers!")
+    await interaction.edit_original_response(content=f"🎏 Bot is connected to {len(bot.guilds)} servers!")
     await interaction.channel.send(file=discord.File("guild_list.txt"))
 
     # Delete the txt file
