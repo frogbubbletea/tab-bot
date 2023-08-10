@@ -43,6 +43,13 @@ def disc_time(stamp, style=""):
     time_string = f"<t:{stamp}:{style}>"
     return time_string
 
+# Convert timestamp to plain text timestamp
+# Uses local timezone
+def text_time(stamp):
+    now = datetime.fromtimestamp(stamp)
+    time_text = now.strftime("%H:%M:%S")
+    return time_text
+
 # Convert UNIX timestamp to aware datetime object (UTC)
 def time_from_stamp(stamp):
     time_object = datetime.fromtimestamp(stamp, timezone.utc)
@@ -68,6 +75,14 @@ def find_sect_matching(course_dict):
     if "MATCHING" in course_dict['info'].keys():
         sect_matching = "ℹ️ " + course_dict['info']['MATCHING'].strip("[]")
     return sect_matching
+
+# Get source URL on original UST course quota website for "Source" button
+def get_source_url(course_code, mode=None):
+    if mode == "l":  # /list command, link to top of website
+        source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code}"
+    else:
+        source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code[0: 4]}#{course_code}"
+    return source_url
 
 # Dict containing all subject channels
 channels = None
