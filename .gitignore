@@ -1,13 +1,21 @@
 # ignore pycache
 __pycache__/
+
 # ignore environment file
 .env
+
 # ignore .replit file
 .replit
+
 # ignore libopus file
 libopus.so.0.8.0
+
 # ignore quotas files
 quotas.json
 quotas_old.json
+
 # ignore random shit
 .DS_Store
+
+# ignore guild list file
+guild_list.txt

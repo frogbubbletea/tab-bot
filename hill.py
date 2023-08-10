@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 import typing
 
 import get_quota
+import config
 
 # Uncomment when running on Windows
 # Fixes runtime error: asyncio.run() cannot be called from a running event loop
@@ -22,6 +23,9 @@ os.chdir(dname)
 # load bot token
 load_dotenv()
 TOKEN = os.getenv('HILL_TOKEN')
+
+# Load admin's ID
+admin_id = 740098404688068641
 
 # Uncomment when running on replit (1/2)
 # from keep_alive import keep_alive
@@ -232,6 +236,28 @@ async def list_autocomplete(
             ][0: 25]
     return data
 
+# "servers" command
+# List all servers the bot is in
+@bot.tree.command(description="List all servers Hill is in!", guild=discord.Object(958651015064854548))
+async def servers(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(thinking=True)
+
+    # Put list of guilds into txt file
+    guild_list_file = open('guild_list.txt', 'w')
+    for guild in bot.guilds:
+        guild_list_file.write(f'{guild.name}(id: {guild.id})\n')
+    guild_list_file.close()
+
+    # Send the txt file
+    await interaction.edit_original_response(content=f"Bot is connected to {len(bot.guilds)} servers!")
+    await interaction.channel.send(file=discord.File("guild_list.txt"))
+
+    # Delete the txt file
+    try:
+        os.remove("guild_list.txt")
+    except:
+        pass
+
 # Slash commands end
 
 # Text commands start
@@ -239,11 +265,18 @@ async def list_autocomplete(
 # Syncs command tree with Discord
 @bot.command()
 async def sync(ctx):
-    if ctx.author.id == 740098404688068641:  # Owner's ID
+    if ctx.author.id == admin_id:  # Owner's ID
+        # Sync global commands
         await bot.tree.sync()
+
+        # Sync guild specific commands
+        for guild in bot.guilds:
+            await bot.tree.sync(guild=guild)
+
         await ctx.send("👍 Commands synced!")
     else:
         await ctx.send("🚫 This command can only be ran by the admin!")
+
 # Text commands end
 
 # Uncomment when running on replit (2/2)
