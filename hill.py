@@ -219,7 +219,7 @@ class SubLinks(discord.ui.View):
 subscribe_group = app_commands.Group(name="sub", description="Manage your course subscriptions!")
 
 # "sub sub" command
-@subscribe_group.command()
+@subscribe_group.command(description="Subscribe to a course! You'll be notified of changes via DM.")
 async def sub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
