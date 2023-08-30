@@ -183,15 +183,6 @@ def find_sub(id):
     
     return subs, entry
 
-# Check if user is a new subscriber (value of key "confirm" is 0)
-def check_if_new_sub(id):
-    subs, entry = find_sub(id)
-
-    if entry['confirm'] == 0:
-        return True
-    else:
-        return False
-
 # Edit list of courses a subscriber is subscribed to
 #
 # operation: can be subscribe (0) or unsubscribe (1)
@@ -223,6 +214,26 @@ def edit_sub(id, operation, course_code=None, idx=None):
     # Save the edited subscribers list
     save_subs(subs)
     return 0
+
+# Check if user is a new subscriber (value of key "confirm" is 0)
+def check_if_new_sub(id):
+    subs, entry = find_sub(id)
+
+    if entry['confirm'] == 0:
+        return True
+    else:
+        return False
+
+# Unsubscribe a user from all their subscribed courses (after 3 undelivered message attempts)
+def unsub_from_all(id):
+    # Get subscriber entry
+    subs, entry = find_sub(id)
+
+    # Remove all courses from their course list
+    entry['courses'] = []
+
+    # Save the edited subscribers list
+    save_subs(subs)
 
 def open_quotas():
     try:
