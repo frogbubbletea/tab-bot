@@ -183,6 +183,15 @@ def find_sub(id):
     
     return subs, entry
 
+# Check if user is a new subscriber (value of key "confirm" is 0)
+def check_if_new_sub(id):
+    subs, entry = find_sub(id)
+
+    if entry['confirm'] == 0:
+        return True
+    else:
+        return False
+
 # Edit list of courses a subscriber is subscribed to
 #
 # operation: can be subscribe (0) or unsubscribe (1)
@@ -197,7 +206,10 @@ def edit_sub(id, operation, course_code=None, idx=None):
     if operation == 0:
         # User cannot subscribe to more than 10 courses
         if len(entry['courses']) >= 10:
-            return False
+            return 1
+        # User cannot subscribe to the same course twice
+        elif course_code in entry['courses']:
+            return 3
         else:
             entry['courses'].append(course_code)
     
@@ -206,10 +218,11 @@ def edit_sub(id, operation, course_code=None, idx=None):
         try:
             entry['courses'].pop(idx)
         except IndexError:
-            return False
+            return 2
     
     # Save the edited subscribers list
     save_subs(subs)
+    return 0
 
 def open_quotas():
     try:
@@ -574,6 +587,73 @@ def compose_list(prefix, page=0):
     embed_list.set_author(name=list_header)
 
     return embed_list
+
+# Display user's subscriptions for "sub" group commands
+def display_subscriptions(id):
+    subs, entry = find_sub(id)
+
+    # Prepare string for list of subscribed courses
+    subscriptions = "```\n"
+    # Add courses to string
+    for count, course in enumerate(entry['courses'], 1):
+        subscriptions += f"{count}. {course}\n"
+    # Finish the string
+    subscriptions += "```"
+
+    return subscriptions
+
+# Subscribe to a course for "subscribe" command
+def compose_subscribe(course_code, id):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return "unavailable"
+    
+    # Check if course code is valid
+    try:
+        course_dict = quotas[course_code]
+    except KeyError:
+        return "key"
+    else:
+        if course_code == "time":
+            return "key"
+    
+    # Attempt to subscribe 
+    sub_result = edit_sub(id, 0, course_code=course_code)
+
+    # Decide embed author and color for success/failure
+    # Show reason for subscription failure
+    sub_embed_author = "🎏 Successfully subscribed to"
+    sub_embed_color = config.color_success
+    sub_failed_reason = None
+    if sub_result != 0:
+        sub_embed_author = "⚠️ Failed to subscribe to"
+        sub_embed_color = config.color_failure
+        if sub_result == 1:
+            sub_failed_reason = "You cannot subscribe to more than 10 courses!"
+        elif sub_result == 3:
+            sub_failed_reason = "You're already subscribed to the course!"
+    
+    # Prepare embed
+    embed_subscribe = discord.Embed(
+        title=f"{course_dict['title']}",
+        description=sub_failed_reason,
+        color=sub_embed_color
+    )
+
+    # Add subscription list to embed
+    subscriptions = display_subscriptions(id)
+    embed_subscribe.add_field(
+        name="🎏 Your subscriptions",
+        value=subscriptions,
+        inline=False
+    )
+
+    # Set author field
+    embed_subscribe.set_author(name=sub_embed_author)
+
+    return embed_subscribe
 
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):

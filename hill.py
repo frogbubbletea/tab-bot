@@ -185,20 +185,6 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 
-# Autocomplete for "quota", "info", "sections" command
-@quota.autocomplete('course_code')
-@info.autocomplete('course_code')
-@sections.autocomplete('course_code')
-async def sections_autocomplete(
-    interaction: discord.Interaction,
-    current: str
-) -> typing.List[app_commands.Choice[str]]:
-    courses = get_quota.get_course_list()
-    data = [app_commands.Choice(name=course, value=course)
-            for course in courses if current.replace(" ", "").upper() in course.upper()
-            ][0: 25]
-    return data
-
 # "list" command
 # List all courses with given prefix
 @bot.tree.command(description="List all courses with a given prefix/area!")
@@ -223,6 +209,11 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
             view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(prefix, "l")))
         await interaction.edit_original_response(embed=embed_list, view=view)
 
+# Compose DM permission tutorial link for "sub sub" command
+class SubLinks(discord.ui.View):
+    def __init__(self, *, timeout=180):
+        super().__init__(timeout=timeout)
+
 # "sub" command group
 # List subscribed courses, subscribe to a course, unsubscribe from a course
 subscribe_group = app_commands.Group(name="sub", description="Manage your course subscriptions!")
@@ -232,12 +223,65 @@ subscribe_group = app_commands.Group(name="sub", description="Manage your course
 async def sub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
-    get_quota.edit_sub(interaction.user.id, 0, course_code=course_code)
+    course_code = course_code.replace(" ", "").upper()
+    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id)
 
-    await interaction.edit_original_response(content="Test")
+    # Error: Course data unavailable
+    if embed_subscribe == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: Invalid course code
+    elif embed_subscribe == "key":
+        await interaction.edit_original_response(content="⚠️ Check your course code!")
+    
+    else:
+        # Send confirmation message
+        await interaction.edit_original_response(embed=embed_subscribe)
+
+        # Display message for new subscribers
+        if get_quota.check_if_new_sub(interaction.user.id):
+            # Create the embed
+            embed_new_sub = discord.Embed(
+                title="Your subscription will be confirmed shortly!",
+                color=config.color_info
+            )
+
+            # Set embed author
+            embed_new_sub.set_author(name="🎏 Howdy new subscriber!")
+
+            # Add message body
+            embed_new_sub.add_field(
+                name="🎏 How to confirm?",
+                value="Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",
+                inline=False
+            )
+            embed_new_sub.add_field(
+                name="🎏 What to do if I didn't receive the DM?",
+                value="1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below."
+            )
+
+            # Add links to "UST Course Qutoas" server and Discord article on privacy settings
+            view = SubLinks()
+            view.add_item(discord.ui.Button(label="🍊 Join our server!", style=discord.ButtonStyle.link, url="https://discord.gg/RNmMMF6xHY"))
+            view.add_item(discord.ui.Button(label="📙 Learn about DM privacy settings", style=discord.ButtonStyle.link, url="https://support.discord.com/hc/en-us/articles/217916488-Blocking-Privacy-Settings-"))
+            await interaction.channel.send(embed=embed_new_sub, view=view)
 
 # Add "sub" command group to command tree
 bot.tree.add_command(subscribe_group)
+
+# Autocomplete for "quota", "info", "sections", "sub sub" command
+@quota.autocomplete('course_code')
+@info.autocomplete('course_code')
+@sections.autocomplete('course_code')
+@sub.autocomplete('course_code')
+async def sections_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    courses = get_quota.get_course_list()
+    data = [app_commands.Choice(name=course, value=course)
+            for course in courses if current.replace(" ", "").upper() in course.upper()
+            ][0: 25]
+    return data
 
 # Autocomplete for "list" command
 @list.autocomplete('prefix')
