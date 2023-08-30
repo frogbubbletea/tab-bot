@@ -139,6 +139,78 @@ def get_cc_areas():
 
     return cc_areas
 
+# Get subscribers file
+def open_subs():
+    try:
+        subs = open('subscribers.json', encoding='utf-8')
+        subs = json.load(subs)
+        return subs
+    except FileNotFoundError:  # Create empty subscribers file (dict) if it is not found
+        subs = {}
+        save_subs(subs)
+        return subs
+
+# Save the edited subscribers file
+def save_subs(subs):
+    outfile = open('subscribers.json', 'w', encoding='utf-8')
+    json.dump(subs, outfile, indent=4)
+    return subs
+
+# Add a new user to the subscribers file
+# Only called when they are not on the file
+def new_profile(subs, id):
+    # Initialize entry for new user
+    new_user = {
+        "confirm": 0,
+        "strikes": 0,
+        "courses": []
+    }
+
+    # Add the user to dict of subscribers
+    subs[str(id)] = new_user
+    subs = save_subs(subs)
+    return subs
+
+# Find entry of user in subscribers dict
+def find_sub(id):
+    subs = open_subs()
+    entry = subs.get(str(id), None)
+
+    # Create new profile for user if they're not found in subscribers dict
+    if not entry:
+        subs = new_profile(subs, id)
+        entry = subs.get(str(id), None)
+    
+    return subs, entry
+
+# Edit list of courses a subscriber is subscribed to
+#
+# operation: can be subscribe (0) or unsubscribe (1)
+# course_code: Course code to be added to course list of subscriber
+# idx: index in course list to be removed
+#
+def edit_sub(id, operation, course_code=None, idx=None):
+    # Get subscriber entry and subscribers dict
+    subs, entry = find_sub(id)
+
+    # Add a course to course list of subscriber (subscribe)
+    if operation == 0:
+        # User cannot subscribe to more than 10 courses
+        if len(entry['courses']) >= 10:
+            return False
+        else:
+            entry['courses'].append(course_code)
+    
+    # Remove a course from the course list (unsubscribe)
+    else:
+        try:
+            entry['courses'].pop(idx)
+        except IndexError:
+            return False
+    
+    # Save the edited subscribers list
+    save_subs(subs)
+
 def open_quotas():
     try:
         quotas = open('quotas.json', encoding='utf-8')

@@ -19,3 +19,6 @@ quotas_old.json
 
 # ignore guild list file
 guild_list.txt
+
+# Subscribers file
+subscribers.json

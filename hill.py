@@ -223,6 +223,22 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
             view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(prefix, "l")))
         await interaction.edit_original_response(embed=embed_list, view=view)
 
+# "sub" command group
+# List subscribed courses, subscribe to a course, unsubscribe from a course
+subscribe_group = app_commands.Group(name="sub", description="Manage your course subscriptions!")
+
+# "sub sub" command
+@subscribe_group.command()
+async def sub(interaction: discord.Interaction, course_code: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    get_quota.edit_sub(interaction.user.id, 0, course_code=course_code)
+
+    await interaction.edit_original_response(content="Test")
+
+# Add "sub" command group to command tree
+bot.tree.add_command(subscribe_group)
+
 # Autocomplete for "list" command
 @list.autocomplete('prefix')
 async def list_autocomplete(
@@ -237,8 +253,9 @@ async def list_autocomplete(
             ][0: 25]
     return data
 
-# "debug" command (test server only)
+# "debug" command
 # Upload bot and quota status to Discord for remote debug
+# Only available in test server
 @bot.tree.command(description="Upload bot and quota status for debug!", guild=discord.Object(test_server_id))
 async def debug(interaction: discord.Interaction, file: str) -> None:
     await interaction.response.defer(thinking=True)
