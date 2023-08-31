@@ -209,22 +209,17 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
             view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(prefix, "l")))
         await interaction.edit_original_response(embed=embed_list, view=view)
 
-# Compose DM permission tutorial link for "sub sub" command
-class SubLinks(discord.ui.View):
-    def __init__(self, *, timeout=180):
-        super().__init__(timeout=timeout)
-
 # "sub" command group
 # List subscribed courses, subscribe to a course, unsubscribe from a course
 subscribe_group = app_commands.Group(name="sub", description="Manage your course subscriptions!")
 
 # "sub sub" command
-@subscribe_group.command(description="Subscribe to a course! You'll be notified of changes via DM.")
+@subscribe_group.command(description="Subscribe to a course! You'll be notified of its changes via DM.")
 async def sub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
     course_code = course_code.replace(" ", "").upper()
-    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id)
+    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id, 0)
 
     # Error: Course data unavailable
     if embed_subscribe == "unavailable":
@@ -234,36 +229,51 @@ async def sub(interaction: discord.Interaction, course_code: str) -> None:
         await interaction.edit_original_response(content="⚠️ Check your course code!")
     
     else:
-        # Send confirmation message
+        # Send confirmation/failure message
         await interaction.edit_original_response(embed=embed_subscribe)
 
         # Display message for new subscribers
         if get_quota.check_if_new_sub(interaction.user.id):
-            # Create the embed
-            embed_new_sub = discord.Embed(
-                title="Your subscription will be confirmed shortly!",
-                color=config.color_info
-            )
-
-            # Set embed author
-            embed_new_sub.set_author(name="🎏 Howdy new subscriber!")
-
-            # Add message body
-            embed_new_sub.add_field(
-                name="🎏 How to confirm?",
-                value="Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",
-                inline=False
-            )
-            embed_new_sub.add_field(
-                name="🎏 What to do if I didn't receive the DM?",
-                value="1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below."
-            )
-
-            # Add links to "UST Course Qutoas" server and Discord article on privacy settings
-            view = SubLinks()
-            view.add_item(discord.ui.Button(label="🍊 Join our server!", style=discord.ButtonStyle.link, url="https://discord.gg/RNmMMF6xHY"))
-            view.add_item(discord.ui.Button(label="📙 Learn about DM privacy settings", style=discord.ButtonStyle.link, url="https://support.discord.com/hc/en-us/articles/217916488-Blocking-Privacy-Settings-"))
+            embed_new_sub, view = get_quota.compose_new_sub_confirmation()
             await interaction.channel.send(embed=embed_new_sub, view=view)
+
+# "sub unsub" command
+@subscribe_group.command(description="Unsubscribe from a course!")
+async def unsub(interaction: discord.Interaction, course_code: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    course_code = course_code.replace(" ", "").upper()
+    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id, 1)
+
+    # Error: Course data unavailable
+    if embed_subscribe == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: Invalid course code
+    elif embed_subscribe == "key":
+        await interaction.edit_original_response(content="⚠️ Check your course code!")
+    
+    else:
+        # Send confirmation/failure message
+        await interaction.edit_original_response(embed=embed_subscribe)
+
+        # Display message for new subscribers
+        if get_quota.check_if_new_sub(interaction.user.id):
+            embed_new_sub, view = get_quota.compose_new_sub_confirmation()
+            await interaction.channel.send(embed=embed_new_sub, view=view)
+
+# "sub show" command
+@subscribe_group.command(description="Show all courses you're subscribed to!")
+async def show(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(thinking=True)
+
+    # Send message of subscriptions
+    embed_show = get_quota.compose_show(interaction)
+    await interaction.edit_original_response(embed=embed_show)
+
+    # Display message for new subscribers
+    if get_quota.check_if_new_sub(interaction.user.id):
+        embed_new_sub, view = get_quota.compose_new_sub_confirmation()
+        await interaction.channel.send(embed=embed_new_sub, view=view)
 
 # Add "sub" command group to command tree
 bot.tree.add_command(subscribe_group)
@@ -281,6 +291,21 @@ async def sections_autocomplete(
     data = [app_commands.Choice(name=course, value=course)
             for course in courses if current.replace(" ", "").upper() in course.upper()
             ][0: 25]
+    return data
+
+# Autocomplete for "sub unsub" command
+@unsub.autocomplete('course_code')
+async def unsub_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    # Get subscription list of current user
+    subs, entry = get_quota.find_sub(interaction.user.id)
+    courses = entry['courses']
+    # Turn them into command autocomplete options
+    data = [app_commands.Choice(name=course, value=course)
+    for course in courses if current.replace(" ", "").upper() in course.upper()
+    ][0: 25]
     return data
 
 # Autocomplete for "list" command

@@ -189,7 +189,7 @@ def find_sub(id):
 # course_code: Course code to be added to course list of subscriber
 # idx: index in course list to be removed
 #
-def edit_sub(id, operation, course_code=None, idx=None):
+def edit_sub(id, operation, course_code=None):
     # Get subscriber entry and subscribers dict
     subs, entry = find_sub(id)
 
@@ -207,8 +207,8 @@ def edit_sub(id, operation, course_code=None, idx=None):
     # Remove a course from the course list (unsubscribe)
     else:
         try:
-            entry['courses'].pop(idx)
-        except IndexError:
+            entry['courses'].remove(course_code)
+        except ValueError:
             return 2
     
     # Save the edited subscribers list
@@ -220,6 +220,15 @@ def check_if_new_sub(id):
     subs, entry = find_sub(id)
 
     if entry['confirm'] == 0:
+        return True
+    else:
+        return False
+
+# Check if user is subscribed to a given course
+def check_if_subscribed(course_code, id):
+    subs, entry = find_sub(id)
+
+    if course_code in entry['courses']:
         return True
     else:
         return False
@@ -614,7 +623,8 @@ def display_subscriptions(id):
     return subscriptions
 
 # Subscribe to a course for "subscribe" command
-def compose_subscribe(course_code, id):
+# operation: 0 for subscribe, 1 for unsubscribe
+def compose_subscribe(course_code, id, operation):
     quotas = open_quotas()
 
     # Check if quotas file is available
@@ -625,30 +635,57 @@ def compose_subscribe(course_code, id):
     try:
         course_dict = quotas[course_code]
     except KeyError:
-        return "key"
+        if check_if_subscribed(course_code, id):  # Allow command to proceed if course code is subscribed (course is deleted by HKUST)
+            pass
+        else:
+            return "key"
     else:
         if course_code == "time":
             return "key"
     
-    # Attempt to subscribe 
-    sub_result = edit_sub(id, 0, course_code=course_code)
+    # Attempt to subscribe/unsubscribe
+    sub_result = edit_sub(id, operation=operation, course_code=course_code)
 
-    # Decide embed author and color for success/failure
-    # Show reason for subscription failure
-    sub_embed_author = "🎏 Successfully subscribed to"
+    # Footer: only shown when successfully subscribing to a course
+    sub_embed_footer = None
+
+    # Decide embed author depending on operation
+    if operation == 0:
+        sub_embed_author = "🎏 Successfully subscribed to"
+        sub_embed_footer = "🎏 Tab will notify you via DM when there are changes to the above courses!"  # Only shown when successfully subscribing
+    else:
+        sub_embed_author = "🎏 Successfully unsubscribed from"
+    # Set embed color to success
     sub_embed_color = config.color_success
+    # Success: no reason for failure
     sub_failed_reason = None
+
     if sub_result != 0:
-        sub_embed_author = "⚠️ Failed to subscribe to"
+        # Decide embed author depending on operation
+        if operation == 0:
+            sub_embed_author = "⚠️ Failed to subscribe to"
+            sub_embed_footer = None  # Failed to subscribe: no footer
+        else:
+            sub_embed_author = "⚠️ Failed to unsubscribe from"
+        # Set embed color to failure
         sub_embed_color = config.color_failure
+        # Show reason for sub/unsub failure
         if sub_result == 1:
             sub_failed_reason = "You cannot subscribe to more than 10 courses!"
+        elif sub_result == 2:
+            sub_failed_reason = "You're not subscribed to this course!"
         elif sub_result == 3:
             sub_failed_reason = "You're already subscribed to the course!"
     
+    # Prepare embed title in case course is deleted
+    try:
+        sub_embed_title = course_dict['title']
+    except:
+        sub_embed_title = course_code
+
     # Prepare embed
     embed_subscribe = discord.Embed(
-        title=f"{course_dict['title']}",
+        title=sub_embed_title,
         description=sub_failed_reason,
         color=sub_embed_color
     )
@@ -661,10 +698,75 @@ def compose_subscribe(course_code, id):
         inline=False
     )
 
-    # Set author field
+    # Set author and footer field
     embed_subscribe.set_author(name=sub_embed_author)
+    embed_subscribe.set_footer(text=sub_embed_footer)
 
     return embed_subscribe
+
+# Compose message of user's subscriptions for "sub show" command
+def compose_show(interaction):
+    # Get list of user's subscriptions
+    subscriptions = display_subscriptions(interaction.user.id)
+
+    # Prepare embed
+    embed_show = discord.Embed(
+        title="Your subscriptions",
+        color=config.color_info
+    )
+
+    # Set author field
+    embed_show.set_author(
+        name=interaction.user.display_name,
+        icon_url=interaction.user.display_avatar.url
+    )
+
+    # Add subscription list to embed
+    embed_show.add_field(
+        name=f"🎏 Courses",
+        value=subscriptions,
+        inline=False
+    )
+
+    # Add footer
+    embed_show.set_footer(text="🎏 Tab will notify you via DM when there are changes to the above courses!")
+
+    return embed_show
+
+# Compose DM permission tutorial link for "sub" group commands
+class SubLinks(discord.ui.View):
+    def __init__(self, *, timeout=180):
+        super().__init__(timeout=timeout)
+
+# Display message for new subscribers for "sub" group commands
+def compose_new_sub_confirmation():
+    # Create the embed
+    embed_new_sub = discord.Embed(
+        title="Your subscription will be confirmed shortly!",
+        description="To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe.",
+        color=config.color_info
+    )
+
+    # Set embed author
+    embed_new_sub.set_author(name="🎏 Howdy new subscriber!")
+
+    # Add message body
+    embed_new_sub.add_field(
+        name="🎏 How to confirm?",
+        value="Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",
+        inline=False
+    )
+    embed_new_sub.add_field(
+        name="🎏 What to do if I didn't receive the DM?",
+        value="1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nTab will remove your subscriptions after 3 failed attempts to DM you. After checking your privacy settings, you should resubscribe!"
+    )
+
+    # Add links to "UST Course Qutoas" server and Discord article on privacy settings
+    view = SubLinks()
+    view.add_item(discord.ui.Button(label="🍊 Join our server!", style=discord.ButtonStyle.link, url="https://discord.gg/RNmMMF6xHY"))
+    view.add_item(discord.ui.Button(label="📙 Learn about DM privacy settings", style=discord.ButtonStyle.link, url="https://support.discord.com/hc/en-us/articles/217916488-Blocking-Privacy-Settings-"))
+
+    return embed_new_sub, view
 
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):
