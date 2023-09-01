@@ -1522,7 +1522,7 @@ async def download_quotas(bot, current_loop):
             traceback.print_exc()
 
             # Send exception to errors channel
-            send_loop_exception(current_loop, "Timed out!", e)
+            await send_loop_exception(current_loop, "Timed out!", e)
             
             return update_time()
 
