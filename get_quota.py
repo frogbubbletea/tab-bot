@@ -215,14 +215,18 @@ def edit_sub(id, operation, course_code=None):
     save_subs(subs)
     return 0
 
-# Check if user is a new subscriber (value of key "confirm" is 0)
-def check_if_new_sub(id):
+# Check if user is a new/canceled subscriber (value of key "confirm" is 0/2)
+def check_if_new_sub(id, mode):
     subs, entry = find_sub(id)
 
-    if entry['confirm'] == 0:
-        return True
+    # Subscribing after canceled: reset status and send warning message
+    # Only reset status when subscribing
+    if entry['confirm'] == 2 and mode == 0:
+        entry['confirm'] = 0
+        save_subs(subs)
+        return 2
     else:
-        return False
+        return entry['confirm']
 
 # Check if user is subscribed to a given course
 def check_if_subscribed(course_code, id):
@@ -738,28 +742,53 @@ class SubLinks(discord.ui.View):
     def __init__(self, *, timeout=180):
         super().__init__(timeout=timeout)
 
-# Display message for new subscribers for "sub" group commands
-def compose_new_sub_confirmation():
+# Display message for new/canceled subscribers for "sub" group commands
+def compose_new_sub_confirmation(mode):
+    embed_strings = {
+        0: [
+            "Your subscription will be confirmed shortly!",  # Embed title
+            "To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe.",  # Embed description
+            config.color_info,  # Embed color
+            "🎏 Howdy new subscriber!",  # Author
+            "🎏 How to confirm?",  # Field 1 name
+            "Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",  # Field 1 value
+            "🎏 What to do if I didn't receive the DM?",  # Field 2 name
+            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nTab will cancel your subscriptions after 3 failed attempts to DM you. After checking your privacy settings, you should resubscribe!"  # Field 2 value
+        ],
+        2: [
+            "Please check your privacy settings!",
+            "Your subscription has been canceled in the meantime. If you're resubscribing, a new confirmation DM is on its way!",
+            config.color_failure,
+            "⚠️ Tab couldn't reach you!",
+            "🎏 What should I do now?",
+            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nYour subscriptions have been canceled for now. After checking your privacy settings, you should resubscribe if you haven't!",
+            None,
+            None
+        ]
+    }
+
     # Create the embed
     embed_new_sub = discord.Embed(
-        title="Your subscription will be confirmed shortly!",
-        description="To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe.",
-        color=config.color_info
+        title=embed_strings[mode][0],
+        description=embed_strings[mode][1],
+        color=embed_strings[mode][2]
     )
 
     # Set embed author
-    embed_new_sub.set_author(name="🎏 Howdy new subscriber!")
+    embed_new_sub.set_author(name=embed_strings[mode][3])
 
     # Add message body
     embed_new_sub.add_field(
-        name="🎏 How to confirm?",
-        value="Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",
+        name=embed_strings[mode][4],
+        value=embed_strings[mode][5],
         inline=False
     )
-    embed_new_sub.add_field(
-        name="🎏 What to do if I didn't receive the DM?",
-        value="1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nTab will remove your subscriptions after 3 failed attempts to DM you. After checking your privacy settings, you should resubscribe!"
-    )
+    if mode == 0:
+        embed_new_sub.add_field(
+            name=embed_strings[mode][6],
+            value=embed_strings[mode][7],
+            inline=False
+        )
 
     # Add links to "UST Course Qutoas" server and Discord article on privacy settings
     view = SubLinks()

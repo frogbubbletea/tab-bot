@@ -232,9 +232,10 @@ async def sub(interaction: discord.Interaction, course_code: str) -> None:
         # Send confirmation/failure message
         await interaction.edit_original_response(embed=embed_subscribe)
 
-        # Display message for new subscribers
-        if get_quota.check_if_new_sub(interaction.user.id):
-            embed_new_sub, view = get_quota.compose_new_sub_confirmation()
+        # Display message for new/canceled subscribers
+        if_new_sub = get_quota.check_if_new_sub(interaction.user.id, 0)
+        if if_new_sub != 1:
+            embed_new_sub, view = get_quota.compose_new_sub_confirmation(if_new_sub)
             await interaction.channel.send(embed=embed_new_sub, view=view)
 
 # "sub unsub" command
@@ -256,9 +257,10 @@ async def unsub(interaction: discord.Interaction, course_code: str) -> None:
         # Send confirmation/failure message
         await interaction.edit_original_response(embed=embed_subscribe)
 
-        # Display message for new subscribers
-        if get_quota.check_if_new_sub(interaction.user.id):
-            embed_new_sub, view = get_quota.compose_new_sub_confirmation()
+        # Display message for new/canceled subscribers
+        if_new_sub = get_quota.check_if_new_sub(interaction.user.id, 1)
+        if if_new_sub != 1:
+            embed_new_sub, view = get_quota.compose_new_sub_confirmation(if_new_sub)
             await interaction.channel.send(embed=embed_new_sub, view=view)
 
 # "sub show" command
@@ -271,8 +273,9 @@ async def show(interaction: discord.Interaction) -> None:
     await interaction.edit_original_response(embed=embed_show)
 
     # Display message for new subscribers
-    if get_quota.check_if_new_sub(interaction.user.id):
-        embed_new_sub, view = get_quota.compose_new_sub_confirmation()
+    if_new_sub = get_quota.check_if_new_sub(interaction.user.id, 1)
+    if if_new_sub != 1:
+        embed_new_sub, view = get_quota.compose_new_sub_confirmation(if_new_sub)
         await interaction.channel.send(embed=embed_new_sub, view=view)
 
 # Add "sub" command group to command tree
