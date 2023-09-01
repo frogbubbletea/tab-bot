@@ -237,17 +237,6 @@ def check_if_subscribed(course_code, id):
     else:
         return False
 
-# Unsubscribe a user from all their subscribed courses (after 3 undelivered message attempts)
-def unsub_from_all(id):
-    # Get subscriber entry
-    subs, entry = find_sub(id)
-
-    # Remove all courses from their course list
-    entry['courses'] = []
-
-    # Save the edited subscribers list
-    save_subs(subs)
-
 def open_quotas():
     try:
         quotas = open('quotas.json', encoding='utf-8')
@@ -746,22 +735,22 @@ class SubLinks(discord.ui.View):
 def compose_new_sub_confirmation(mode):
     embed_strings = {
         0: [
-            "Your subscription will be confirmed shortly!",  # Embed title
-            "To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe.",  # Embed description
+            "Your subscription is pending! Please wait for verification.",  # Embed title
+            "To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe. Normally you'll only need to verify once!",  # Embed description
             config.color_info,  # Embed color
             "🎏 Howdy new subscriber!",  # Author
-            "🎏 How to confirm?",  # Field 1 name
-            "Tab will send you a confirmation DM within 5 minutes. This process is automatic and no action is needed!",  # Field 1 value
+            "🎏 How to verify?",  # Field 1 name
+            "Tab will send you a confirmation DM within 5 minutes. Once you receive it, you're verified and can subscribe freely! Your current subscriptions will also be saved. This process is automatic and no action is needed!",  # Field 1 value
             "🎏 What to do if I didn't receive the DM?",  # Field 2 name
-            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nTab will cancel your subscriptions after 3 failed attempts to DM you. After checking your privacy settings, you should resubscribe!"  # Field 2 value
+            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nTab will cancel your subscriptions after 3 failed attempts to DM you. After checking your privacy settings, you should subscribe again!"  # Field 2 value
         ],
         2: [
-            "Please check your privacy settings!",
-            "Your subscription has been canceled in the meantime. If you're resubscribing, a new confirmation DM is on its way!",
+            "Verification failed! Please check your privacy settings.",
+            "Your subscription has been canceled. If you're resubscribing, a new confirmation DM is on its way!",
             config.color_failure,
             "⚠️ Tab couldn't reach you!",
             "🎏 What should I do now?",
-            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nYour subscriptions have been canceled for now. After checking your privacy settings, you should resubscribe if you haven't!",
+            "1. **Join our server**\nBy default, Discord only allows DMs from users sharing a mutual server with you. Since Tab only resides in our server, you should join it to give Tab sufficient permissions to DM you!\n2. **Check your privacy settings**\nCheck if you blocked DMs from members of our server! See how to do it in the article linked below.\n3. **Subscribe again**\nYour subscriptions have been canceled for now. After checking your privacy settings, you should subscribe again if you haven't!",
             None,
             None
         ]
@@ -796,6 +785,54 @@ def compose_new_sub_confirmation(mode):
     view.add_item(discord.ui.Button(label="📙 Learn about DM privacy settings", style=discord.ButtonStyle.link, url="https://support.discord.com/hc/en-us/articles/217916488-Blocking-Privacy-Settings-"))
 
     return embed_new_sub, view
+
+# Send confirmation DMs to new subscribers after every update loop
+# Unsubscribe users with 3 strikes (failed DMs)
+async def check_on_everyone(bot):
+    # Get subscribers file
+    subs = open_subs()
+
+    # Scan all subscribers for new subscribers
+    for key, value in subs.items():
+        # New subscriber found: attempt to confirm them
+        if value['confirm'] == 0:  
+            # Get list of subscriptions of user
+            subscriptions = display_subscriptions(key)
+
+            # Prepare embed
+            embed_confirmation_dm = discord.Embed(
+                title="Verification complete! Your subscription is confirmed.",
+                color=config.color_success
+            )
+
+            # Set author
+            embed_confirmation_dm.set_author(name="🎏 Confirmation DM sent successfully!")
+
+            # Add subscription list to embed
+            embed_confirmation_dm.add_field(
+                name="🎏 Your subscriptions",
+                value=subscriptions,
+                inline=False
+            )
+
+            # Set footer
+            embed_confirmation_dm.set_footer(text="🎏 Tab will notify you via DM when there are changes to the above courses!")
+
+            # Attempt to send the DM
+            try:
+                await bot.get_user(int(key)).send(embed=embed_confirmation_dm)
+            except:
+                value['strikes'] += 1  # Failed to message once: strike
+            else:
+                value['confirm'] = 1  # DM success: confirm
+        
+        # Subscriber with 3 strikes found: unsubscribe them
+        if value['strikes'] >= 3:
+            value['courses'] = []  # Unsubscribe them
+            value['confirm'] = 2  # Set status to "unsubscribed"
+            value['strikes'] = 0  # Reset number of strikes
+    
+    save_subs(subs)
 
 # Helper function to check if course/section/quota changed
 async def check_diffs(new_quotas=None, old_quotas=None):

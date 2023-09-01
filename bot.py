@@ -36,6 +36,7 @@ TOKEN = os.getenv('DISCORD_TOKEN')
 # define bot
 intents = discord.Intents.default()
 intents.message_content = True
+intents.members = True
 bot = commands.Bot(command_prefix="-", intents=intents, activity=discord.Game(name="Doki Doki Literature Club!"), help_command=None)
 
 # Helper function to check if course/section/quota changed
@@ -90,6 +91,9 @@ async def update_quotas():
     update_T = get_quota.disc_time(update_time, "T")
 
     await update_channel.send(f"🔃 Updated! {start_d} {start_T} - {update_d} {update_T}: {update_quotas.current_loop}")
+
+    # Confirm new subscribers and unsubscribe unreachable users
+    await get_quota.check_on_everyone(bot)
 
     # # Start checking diffs after first loop run
     # if update_quotas.current_loop > 0:
