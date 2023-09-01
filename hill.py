@@ -360,7 +360,7 @@ async def debug_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
-    file_list = ['quotas', 'quotas_old', 'guild_list']
+    file_list = ['quotas', 'quotas_old', 'subscribers', 'guild_list']
     file_list = [app_commands.Choice(name=file, value=file) for file in file_list]
     return file_list
 
