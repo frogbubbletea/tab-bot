@@ -821,8 +821,8 @@ async def check_on_everyone(bot):
             # Attempt to send the DM
             try:
                 await bot.get_user(int(key)).send(embed=embed_confirmation_dm)
-            except:
-                value['strikes'] += 1  # Failed to message once: strike
+            except discord.errors.Forbidden:  # Only strike when Discord blocked the DM
+                value['strikes'] += 1  # Failed to message once: Strike
             else:
                 value['confirm'] = 1  # DM success: confirm
         
@@ -834,8 +834,28 @@ async def check_on_everyone(bot):
     
     save_subs(subs)
 
+# Send course changes to subscribers
+async def send_to_subscribers(bot, course_code, embed):
+    # Get subscribers file
+    subs = open_subs()
+
+    # Check all subscribers for subscribers to the course
+    # Must also be verified (confirmed)
+    for key, value in subs.items():
+        if course_code in value['courses'] and value['confirm'] == 1 and value['strikes'] < 3:
+            # Attempt to send the DM
+            try:
+                await bot.get_user(int(key)).send(embed=embed)
+            except discord.errors.Forbidden:
+                value['strikes'] += 1  # Failed to message once: Strike
+            except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
+                pass
+    
+    # Save subscribers file after striking users
+    save_subs(subs)
+
 # Helper function to check if course/section/quota changed
-async def check_diffs(new_quotas=None, old_quotas=None):
+async def check_diffs(bot, new_quotas=None, old_quotas=None):
     # Open quotas files
     if not new_quotas:
         new_quotas = open_quotas()
@@ -882,6 +902,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
             # Send the announcement
             await channels.get(key[0: 4], channels['other']).send(embed=embed_new_course)
+            await send_to_subscribers(bot, key, embed_new_course)
             changed = True
 
         else:
@@ -922,7 +943,11 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             )
 
                     # Send the message
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    try:
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
+                        pass
+                    await send_to_subscribers(bot, key, embed_course_info_change)
                     changed = True
 
                 # Send message for changed course info
@@ -952,7 +977,11 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                                 )
                         
                     # Send the message
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    try:
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
+                        pass
+                    await send_to_subscribers(bot, key, embed_course_info_change)
                     changed = True
                 
             # Check course info removals
@@ -987,7 +1016,11 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                             )
 
                     # Send the message
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    try:
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                    except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
+                        pass
+                    await send_to_subscribers(bot, key, embed_course_info_change)
                     changed = True
 
             for key2, value2 in value['sections'].items():
@@ -1039,6 +1072,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     
                     # Send the announcement
                     await channels.get(key[0: 4], channels['other']).send(embed=embed_new_section)
+                    await send_to_subscribers(bot, key, embed_new_section)
                     changed = True
                 
                 else:
@@ -1153,6 +1187,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
                         # Send the announcement
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_quota_change)
+                        await send_to_subscribers(bot, key, embed_quota_change)
                         changed = True
                     
                     # 🥭 Date & Time changed!
@@ -1201,6 +1236,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # If there is time change, send the announcement
                     if time_deltas != ([], []):
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_time_change)
+                        await send_to_subscribers(bot, key, embed_time_change)
                         changed = True
 
                     # 🥝 Venue changed!
@@ -1256,6 +1292,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # If there is venue change, send the announcement
                     if venue_deltas != ([], []):
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_venue_change)
+                        await send_to_subscribers(bot, key, embed_venue_change)
                         changed = True
                     
                     # 🍇 Instructor changed!
@@ -1311,6 +1348,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # If there is instructor change, send the announcement
                     if inst_deltas != ([], []):
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change)
+                        await send_to_subscribers(bot, key, embed_inst_change)
                         changed = True
                     
                     # 🫐 Remarks changed!
@@ -1366,6 +1404,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     # If there is remarks change, send the announcement
                     if remarks_deltas != ([], []):
                         await channels.get(key[0: 4], channels['other']).send(embed=embed_remarks_change)
+                        await send_to_subscribers(bot, key, embed_remarks_change)
                         changed = True
 
     for key3, value3 in old_quotas.items():
@@ -1397,6 +1436,7 @@ async def check_diffs(new_quotas=None, old_quotas=None):
 
             # Send the announcement
             await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_course)
+            await send_to_subscribers(bot, key3, embed_delete_course)
             changed = True
 
         else:
@@ -1447,11 +1487,12 @@ async def check_diffs(new_quotas=None, old_quotas=None):
                     
                     # Send the announcement
                     await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_section)
+                    await send_to_subscribers(bot, key3, embed_delete_section)
                     changed = True
 
     return changed
 
-async def download_quotas(current_loop):
+async def download_quotas(bot, current_loop):
     url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/"
     
     try:
@@ -1589,7 +1630,7 @@ async def download_quotas(current_loop):
             json.dump(quotas, oldfile, indent=4)
         except:
             json.dump({}, oldfile, indent=4)
-    elif await check_diffs(quotas, open_old_quotas()):
+    elif await check_diffs(bot=bot, new_quotas=quotas, old_quotas=open_old_quotas()):
         oldfile = open('quotas_old.json', 'w', encoding='utf-8')
         try:
             json.dump(quotas, oldfile, indent=4)

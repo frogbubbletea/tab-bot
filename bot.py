@@ -79,7 +79,7 @@ async def update_quotas():
 
     start_time = get_quota.update_time()
     print(f"Update started: {start_time}")
-    update_time = await get_quota.download_quotas(update_quotas.current_loop)
+    update_time = await get_quota.download_quotas(bot, update_quotas.current_loop)
     print(f"Update finished: {update_time}: {update_quotas.current_loop}")
 
     # Send update confirmation message to quota-updates channel
