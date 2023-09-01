@@ -823,6 +823,8 @@ async def check_on_everyone(bot):
                 await bot.get_user(int(key)).send(embed=embed_confirmation_dm)
             except discord.errors.Forbidden:  # Only strike when Discord blocked the DM
                 value['strikes'] += 1  # Failed to message once: Strike
+            except AttributeError:  # Raised when Discord couldn't find the user
+                value['strikes'] += 1
             else:
                 value['confirm'] = 1  # DM success: confirm
         
@@ -848,6 +850,8 @@ async def send_to_subscribers(bot, course_code, embed):
                 await bot.get_user(int(key)).send(embed=embed)
             except discord.errors.Forbidden:
                 value['strikes'] += 1  # Failed to message once: Strike
+            except AttributeError:
+                value['strikes'] += 1  # Could not find user: Strike
             except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
                 pass
     
