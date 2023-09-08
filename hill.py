@@ -244,7 +244,14 @@ async def unsub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
     course_code = course_code.replace(" ", "").upper()
-    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id, 1)
+
+    # Detect unsubscribe all
+    if course_code == "ALLCOURSES":
+        operation = 2
+    else:
+        operation = 1
+    
+    embed_subscribe = get_quota.compose_subscribe(course_code, interaction.user.id, operation)
 
     # Error: Course data unavailable
     if embed_subscribe == "unavailable":
@@ -305,6 +312,7 @@ async def unsub_autocomplete(
     # Get subscription list of current user
     subs, entry = get_quota.find_sub(interaction.user.id)
     courses = entry['courses']
+    courses.append("All courses") # Add option to unsub from all courses
     # Turn them into command autocomplete options
     data = [app_commands.Choice(name=course, value=course)
     for course in courses if current.replace(" ", "").upper() in course.upper()

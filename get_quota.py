@@ -185,7 +185,10 @@ def find_sub(id):
 
 # Edit list of courses a subscriber is subscribed to
 #
-# operation: can be subscribe (0) or unsubscribe (1)
+# operation:
+#   0: subscribe 1 course
+#   1: unsubscribe 1 course
+#   2: unsubscribe all courses
 # course_code: Course code to be added to course list of subscriber
 # idx: index in course list to be removed
 #
@@ -205,11 +208,16 @@ def edit_sub(id, operation, course_code=None):
             entry['courses'].append(course_code)
     
     # Remove a course from the course list (unsubscribe)
-    else:
+    elif operation == 1:
         try:
             entry['courses'].remove(course_code)
+        # User cannot unsubscribe from a course they didn't subscribe to
         except ValueError:
             return 2
+    
+    # Unsubscribe user from all courses
+    elif operation == 2:
+        entry['courses'] = []
     
     # Save the edited subscribers list
     save_subs(subs)
@@ -616,7 +624,7 @@ def display_subscriptions(id):
     return subscriptions
 
 # Subscribe to a course for "subscribe" command
-# operation: 0 for subscribe, 1 for unsubscribe
+# operation: 0 for subscribe one, 1 for unsubscribe one, 2 for unsubscribe all
 def compose_subscribe(course_code, id, operation):
     quotas = open_quotas()
 
@@ -629,6 +637,8 @@ def compose_subscribe(course_code, id, operation):
         course_dict = quotas[course_code]
     except KeyError:
         if check_if_subscribed(course_code, id):  # Allow command to proceed if course code is subscribed (course is deleted by HKUST)
+            pass
+        elif course_code == "ALLCOURSES":  # If unsubscribing from all courses: proceed
             pass
         else:
             return "key"
@@ -648,6 +658,7 @@ def compose_subscribe(course_code, id, operation):
         sub_embed_footer = "🎏 Tab will notify you via DM when there are changes to the above courses!"  # Only shown when successfully subscribing
     else:
         sub_embed_author = "🎏 Successfully unsubscribed from"
+
     # Set embed color to success
     sub_embed_color = config.color_success
     # Success: no reason for failure
@@ -664,17 +675,22 @@ def compose_subscribe(course_code, id, operation):
         sub_embed_color = config.color_failure
         # Show reason for sub/unsub failure
         if sub_result == 1:
-            sub_failed_reason = "You cannot subscribe to more than 10 courses!"
+            sub_failed_reason = "You can't subscribe to more than 10 courses!"
         elif sub_result == 2:
             sub_failed_reason = "You're not subscribed to this course!"
         elif sub_result == 3:
             sub_failed_reason = "You're already subscribed to the course!"
     
-    # Prepare embed title in case course is deleted
-    try:
-        sub_embed_title = course_dict['title']
-    except:
-        sub_embed_title = course_code
+    # Prepare embed title
+    # Special title if unsubscribing from all courses
+    if operation == 2:
+        sub_embed_title = "All courses"
+    else:
+        # Prepare embed title in case course is deleted
+        try:
+            sub_embed_title = course_dict['title']
+        except:
+            sub_embed_title = course_code
 
     # Prepare embed
     embed_subscribe = discord.Embed(
