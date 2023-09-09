@@ -279,6 +279,79 @@ embed_quota_unavailable = discord.Embed(title=f"⚠️ Course data is unavailabl
                                         description="Try again in a minute.",
                                         color=config.color_failure)
 
+# Format section information (schedule) to be printed by command output/notification
+# One section at a time!
+# Returns a list of strings
+def format_section(section):
+    # Formatted output will be stored in a list in case string length exceeds 1024 characters
+    formatted_section = ["```\n"]
+
+    # Split schedule rows
+    time_list = section[1].split("\n\n\n")
+    venue_list = section[2].split("\n\n\n")
+    instructor_list = section[3].split("\n\n\n")
+
+    # Make all strings single-line
+    time_list = [t.replace('\n', ', ') for t in time_list]
+    venue_list = [t.replace('\n', ', ') for t in venue_list]
+    instructor_list = [t.replace('\n', ', ') for t in instructor_list]
+
+    # Add strings to field
+    # Add strings row by row
+    for i in range(len(time_list)):
+        # Add one row of schedule
+        # Field character limit protection: buffer new rows
+        formatted_schedule_row = ""
+
+        formatted_schedule_row += f"{'Time':<6}| {time_list[i]}\n"
+        formatted_schedule_row += f"{'Venue':<6}| {venue_list[i]}\n"
+        formatted_schedule_row += f"{'By':<6}| {instructor_list[i]}\n"
+        formatted_schedule_row += "\n"
+
+        # Add row to formatted string
+        # Count chars before adding to formatted string
+        # If formatted string exceeded field length limit: make new string (field)
+        if len(formatted_schedule_row) + len(formatted_section[-1]) > 1020:  # End of codeblock "\n```" is 4 chars long
+            # Add new row to new string (new field)
+            formatted_section[-1] += "\n```"  # End field
+            formatted_section.append("```\n")  # Start new field
+            formatted_section[-1] += formatted_schedule_row
+        # Formatted string hasn't exceeded length yet: add row to string
+        else:
+            formatted_section[-1] += formatted_schedule_row
+    
+    # Add remarks
+    # There will always be at most 1 remark per section
+    if section[8] != "\u00a0":  # Only make space if remarks field is non-empty
+        # Split remarks into lines to remove redundant newlines
+        remarks_list_unfiltered = section[8].split("\n")
+        # Remove empty lines
+        remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
+        # Display the remarks
+        formatted_schedule_row = "Remarks:\n"  
+        #section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
+        formatted_schedule_row += "\n".join(remarks_list)
+        #section_field += "\u001b[0m"  # Coloring end
+        formatted_schedule_row += "\n"
+    
+        # Add remarks to formatted string
+        # Count chars before adding remarks to formatted string
+        # If formatted string exceeded field length limit: make new string (field)
+        if len(formatted_schedule_row) + len(formatted_section[-1]) > 1020:  # End of codeblock "\n```" is 4 chars long
+            # Add new row to new string (new field)
+            formatted_section[-1] += "\n```"
+            formatted_section.append("```\n")
+            formatted_section[-1] += formatted_schedule_row
+        # Formatted string hasn't exceeded length yet: add row to string
+        else:
+            formatted_section[-1] += formatted_schedule_row
+    
+    # End last field
+    formatted_section[-1] += "\n```"
+    
+    # Return formatted output
+    return formatted_section
+
 # Calculate max page index
 def find_max_page(dict, page_size):
     max_page = int(len(dict) / page_size)
@@ -468,75 +541,25 @@ def compose_sections(course_code, page=0):
     except IndexError:
         sections_paged = list(course_dict['sections'].items())[page_size * page: ]
 
-    for key, value in sections_paged:
-        section_id = key
-        section_field = "```ansi\n"  # Use ANSI text coloring
+    # key: section number and class code
+    # value: list containing section schedule and quota
+    for key, value in sections_paged:  # For each section
+        # Format schedule of each section (pretty print)
+        formatted_section = format_section(value)
 
-        time_list = value[1].split("\n\n\n")
-        venue_list = value[2].split("\n\n\n")
-        instructor_list = value[3].split("\n\n\n")
+        # Section can have multiple fields due to string length
+        for i in range(len(formatted_section)):  # Using range for loop here to get the index of elements
+            # field_name: section number and class code
+            field_name = f"🍊 {key}"
+            if i > 0:  # Add (cont.) for sections occupying more than 1 field
+                field_name += " (cont.)"
 
-        # Make all strings single-line
-        time_list = [t.replace('\n', ', ') for t in time_list]
-        venue_list = [t.replace('\n', ', ') for t in venue_list]
-        instructor_list = [t.replace('\n', ', ') for t in instructor_list]
-
-        # Add strings to field
-        # Add strings row by row
-        for i in range(len(time_list)):
-            # Field character limit protection: buffer new rows
-            section_field_pending = ""
-
-            section_field_pending += f"{'Time':<6}| {time_list[i]}\n"
-            section_field_pending += f"{'Venue':<6}| {venue_list[i]}\n"
-            section_field_pending += f"{'By':<6}| {instructor_list[i]}\n"
-            section_field_pending += "\n"
-
-            # Count chars before adding to field
-            if len(section_field) + len(section_field_pending) > 1020:  # end of codeblock is 4 chars long
-                # Send current block to field first
-                section_field += "\n```"
-                embed_sections.add_field(name=f"🍊 {key}",
-                                 value=section_field,
-                                 inline=False)
-                # Reset field for next block
-                section_field = "```\n" + section_field_pending
-            else:  # Char count under limit: add new row to field
-                section_field += section_field_pending
-
-        # Buffer remarks
-        section_field_pending = ""
-
-        # Add remarks
-        # There will always be at most 1 remark per section
-        if value[8] != "\u00a0":  # Only make space if remarks field is non-empty
-            # Split remarks into lines to remove redundant newlines
-            remarks_list_unfiltered = value[8].split("\n")
-            # Remove empty lines
-            remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
-            # Display the remarks
-            section_field_pending += "Remarks:\n"  
-            #section_field += "\u001b[0;41;37m" #  Coloring start: Orange background, white text
-            section_field_pending += "\n".join(remarks_list)
-            #section_field += "\u001b[0m"  # Coloring end
-            section_field_pending += "\n"
-
-        # Field character limit protection: count chars before adding remarks
-        if len(section_field) + len(section_field_pending) > 1020:
-            # Send current block to field first
-            section_field += "\n```"
-            embed_sections.add_field(name=f"🍊 {key}",
-                                 value=section_field,
-                                 inline=False)
-            # Reset field for next block
-            section_field = "```\n" + section_field_pending
-        else:  # Char count under limit: add remarks to field
-            section_field += section_field_pending
-
-        section_field += "```"
-        embed_sections.add_field(name=f"🍊 {key}",
-                                 value=section_field,
-                                 inline=False)
+            # Add one field of a section
+            embed_sections.add_field(
+                name=field_name,  # Section name and code
+                value=formatted_section[i],
+                inline=False
+            )
 
     # Embed timestamp (update time) is shown behind footer
     embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
