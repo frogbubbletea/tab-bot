@@ -548,15 +548,16 @@ def compose_sections(course_code, page=0):
         formatted_section = format_section(value)
 
         # Section can have multiple fields due to string length
-        for i in range(len(formatted_section)):  # Using range for loop here to get the index of elements
-            # field_name: section number and class code
+        # Using range for loop to get index of field
+        for i in range(len(formatted_section)):
+            # field_name: section number and class number
             field_name = f"🍊 {key}"
             if i > 0:  # Add (cont.) for sections occupying more than 1 field
                 field_name += " (cont.)"
 
             # Add one field of a section
             embed_sections.add_field(
-                name=field_name,  # Section name and code
+                name=field_name,
                 value=formatted_section[i],
                 inline=False
             )
@@ -1070,6 +1071,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     await send_to_subscribers(bot, key, embed_course_info_change)
                     changed = True
 
+            # key2: Section code, class number
+            # value2: List containing schedule and quota
             for key2, value2 in value['sections'].items():
                 # 🍅 New section!
                 if key2 not in old_quotas[key]['sections']:
@@ -1084,6 +1087,26 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     )
                     # Prepare header of change announcement
                     embed_new_section.set_author(name="🍅 New section!")
+
+                    # Display schedule of section
+                    # Format (pretty print) the schedule
+                    new_section_formatted_section = format_section(value2)
+
+                    # Section can have multiple fields due to string length
+                    # Using range for loop to get index of field
+                    for new_section_schedule_field_number in range(len(new_section_formatted_section)):
+                        # new_section_schedule_name: Schedule field name
+                        new_section_schedule_name = "🍅 Schedule"
+                        # Add (cont.) for sections occupying more than 1 field
+                        if new_section_schedule_field_number > 0:
+                            new_section_schedule_name += " (cont.)"
+                        
+                        # Add one field of a section
+                        embed_new_section.add_field(
+                            name=new_section_schedule_name,
+                            value=new_section_formatted_section[new_section_schedule_field_number],
+                            inline=False
+                        )
 
                     # Display quota of section: Total
                     new_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
@@ -1487,6 +1510,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
             changed = True
 
         else:
+            # key4: Section code, class number
+            # value4: List containin schedule and quota
             for key4, value4 in value3['sections'].items():
                 # 🍹 Section deleted!
                 if key4 not in new_quotas[key3]['sections']:
@@ -1498,6 +1523,26 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     )
                     # Prepare header of change announcement
                     embed_delete_section.set_author(name="🍹 Section deleted!")
+
+                    # Display schedule of section
+                    # Format (pretty print) the schedule
+                    old_section_formatted_section = format_section(value4)
+
+                    # Section can have multiple fields due to string length
+                    # Using range for loop to get index of field
+                    for old_section_schedule_field_number in range(len(old_section_formatted_section)):
+                        # old_section_schedule_name: Schedule field name
+                        old_section_schedule_name = "🍹 Schedule"
+                        # Add (cont.) for sections occupying more than 1 field
+                        if old_section_schedule_field_number > 0:
+                            old_section_schedule_name += " (cont.)"
+                        
+                        # Add one field of a section
+                        embed_delete_section.add_field(
+                            name=old_section_schedule_name,
+                            value=old_section_formatted_section[old_section_schedule_field_number],
+                            inline=False
+                        )
 
                     # Display quota of section: total
                     delete_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
