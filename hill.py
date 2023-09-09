@@ -130,7 +130,8 @@ async def quota(interaction: discord.Interaction, course_code: str):
     else:
         try:
             view = QuotaPage(mode="q", course_code=course_code)
-            view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(course_code)))
+            # Add source button linking to course entry in original course quota website
+            get_quota.add_source_url(view, course_code)
             await interaction.edit_original_response(embed=embed_quota, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
@@ -154,7 +155,8 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
         try:
             view = QuotaPage(mode="i", course_code=course_code)
             view.clear_items()
-            view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(course_code)))
+            # Add source button linking to course entry in original course quota website
+            get_quota.add_source_url(view, course_code)
             await interaction.edit_original_response(embed=embed_info, view=view)
         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
@@ -180,7 +182,8 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
     else:
         try:
             view = QuotaPage(mode="s", course_code=course_code)
-            view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(course_code)))
+            # Add source button linking to course entry in original course quota website
+            get_quota.add_source_url(view, course_code)
             await interaction.edit_original_response(embed=embed_sections, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
@@ -206,7 +209,8 @@ async def list(interaction: discord.Interaction, prefix: str) -> None:
         view = QuotaPage(mode="l", course_code=prefix)
         # Do not add source link if common core is given
         if prefix not in cc_areas:
-            view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_quota.get_source_url(prefix, "l")))
+            # Add source button linking to course entry in original course quota website
+            get_quota.add_source_url(view, prefix, "l")
         await interaction.edit_original_response(embed=embed_list, view=view)
 
 # "sub" command group

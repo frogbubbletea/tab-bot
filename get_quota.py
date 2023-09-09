@@ -84,6 +84,11 @@ def get_source_url(course_code, mode=None):
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code[0: 4]}#{course_code}"
     return source_url
 
+# Add URL to course entry in HKUST Class Schedule & Quota website
+def add_source_url(view: discord.ui.View, course_code: str, mode=None):
+    view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(course_code, mode)))
+    return view
+
 # Dict containing all subject channels
 channels = None
 async def get_channels(bot):
@@ -766,7 +771,7 @@ def compose_show(interaction):
 
     return embed_show
 
-# Compose DM permission tutorial link for "sub" group commands
+# Compose DM permission tutorial link for "sub" group commands and course notifications
 class SubLinks(discord.ui.View):
     def __init__(self, *, timeout=180):
         super().__init__(timeout=timeout)
@@ -879,7 +884,7 @@ async def check_on_everyone(bot):
     save_subs(subs)
 
 # Send course changes to subscribers
-async def send_to_subscribers(bot, course_code, embed):
+async def send_to_subscribers(bot, course_code, embed, view):
     # Get subscribers file
     subs = open_subs()
 
@@ -890,10 +895,10 @@ async def send_to_subscribers(bot, course_code, embed):
             # Attempt to send the DM
             try:
                 try:
-                    await bot.get_user(int(key)).send(embed=embed)
+                    await bot.get_user(int(key)).send(embed=embed, view=view)
                 except AttributeError:  # If user not in member cache
                     user = await bot.fetch_user(int(key))
-                    await user.send(embed=embed)
+                    await user.send(embed=embed, view=view)
             except discord.errors.Forbidden:
                 value['strikes'] += 1  # Failed to message once: Strike
             except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
@@ -924,6 +929,10 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
         # Skip 'time' entry
         if key == 'time':
             continue
+            
+        # Add link to source in original quota website
+        view_new = SubLinks()
+        add_source_url(view_new, key)  # key: Course code
 
         # 🥑 New course!
         if key not in old_quotas:
@@ -949,8 +958,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
             )
 
             # Send the announcement
-            await channels.get(key[0: 4], channels['other']).send(embed=embed_new_course)
-            await send_to_subscribers(bot, key, embed_new_course)
+            await channels.get(key[0: 4], channels['other']).send(embed=embed_new_course, view=view_new)
+            await send_to_subscribers(bot, key, embed_new_course, view_new)
             changed = True
 
         else:
@@ -989,13 +998,13 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                                 value=f"```\n{v[1014 * v_chunk: ]}\n```",
                                 inline=False
                             )
-
+                    
                     # Send the message
                     try:
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change, view=view_new)
                     except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
                         pass
-                    await send_to_subscribers(bot, key, embed_course_info_change)
+                    await send_to_subscribers(bot, key, embed_course_info_change, view_new)
                     changed = True
 
                 # Send message for changed course info
@@ -1026,10 +1035,10 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                         
                     # Send the message
                     try:
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change, view=view_new)
                     except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
                         pass
-                    await send_to_subscribers(bot, key, embed_course_info_change)
+                    await send_to_subscribers(bot, key, embed_course_info_change, view_new)
                     changed = True
                 
             # Check course info removals
@@ -1065,10 +1074,10 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
                     # Send the message
                     try:
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change, view=view_new)
                     except ValueError:  # Stop bot from freaking out over oversized embed (unlikely)
                         pass
-                    await send_to_subscribers(bot, key, embed_course_info_change)
+                    await send_to_subscribers(bot, key, embed_course_info_change, view=view_new)
                     changed = True
 
             # key2: Section code, class number
@@ -1141,8 +1150,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     )
                     
                     # Send the announcement
-                    await channels.get(key[0: 4], channels['other']).send(embed=embed_new_section)
-                    await send_to_subscribers(bot, key, embed_new_section)
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_new_section, view=view_new)
+                    await send_to_subscribers(bot, key, embed_new_section, view_new)
                     changed = True
                 
                 else:
@@ -1256,8 +1265,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                                 )
 
                         # Send the announcement
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_quota_change)
-                        await send_to_subscribers(bot, key, embed_quota_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_quota_change, view=view_new)
+                        await send_to_subscribers(bot, key, embed_quota_change, view_new)
                         changed = True
                     
                     # 🥭 Date & Time changed!
@@ -1305,8 +1314,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
                     # If there is time change, send the announcement
                     if time_deltas != ([], []):
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_time_change)
-                        await send_to_subscribers(bot, key, embed_time_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_time_change, view=view_new)
+                        await send_to_subscribers(bot, key, embed_time_change, view_new)
                         changed = True
 
                     # 🥝 Venue changed!
@@ -1361,8 +1370,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
                     # If there is venue change, send the announcement
                     if venue_deltas != ([], []):
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_venue_change)
-                        await send_to_subscribers(bot, key, embed_venue_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_venue_change, view=view_new)
+                        await send_to_subscribers(bot, key, embed_venue_change, view_new)
                         changed = True
                     
                     # 🍇 Instructor changed!
@@ -1417,8 +1426,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
                     # If there is instructor change, send the announcement
                     if inst_deltas != ([], []):
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change)
-                        await send_to_subscribers(bot, key, embed_inst_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_inst_change, view=view_new)
+                        await send_to_subscribers(bot, key, embed_inst_change, view_new)
                         changed = True
                     
                     # 🫐 Remarks changed!
@@ -1473,14 +1482,15 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
                     # If there is remarks change, send the announcement
                     if remarks_deltas != ([], []):
-                        await channels.get(key[0: 4], channels['other']).send(embed=embed_remarks_change)
-                        await send_to_subscribers(bot, key, embed_remarks_change)
+                        await channels.get(key[0: 4], channels['other']).send(embed=embed_remarks_change, view=view_new)
+                        await send_to_subscribers(bot, key, embed_remarks_change, view_new)
                         changed = True
 
     for key3, value3 in old_quotas.items():
         # Skip "time" entry
         if key3 == "time":
             continue
+
         # ☕ Course deleted!
         if key3 not in new_quotas:
             # await channels.get(key3[0: 4], channels['other']).send(f"☕ **Course deleted!**\n{value3.get('title', 'Error')}\n{len(value3['sections'])} sections")
@@ -1504,9 +1514,13 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                 inline=False
             )
 
+            # Add link to source in original quota website
+            view_course_deleted = SubLinks()
+            add_source_url(view_course_deleted, key3[0:4], "l")  # key: Course code prefix
+
             # Send the announcement
-            await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_course)
-            await send_to_subscribers(bot, key3, embed_delete_course)
+            await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_course, view=view_course_deleted)
+            await send_to_subscribers(bot, key3, embed_delete_course, view_course_deleted)
             changed = True
 
         else:
@@ -1576,10 +1590,14 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                         value=delete_section_quotas,
                         inline=False
                     )
+
+                    # Add link to source in original quota website
+                    view_section_deleted = SubLinks()
+                    add_source_url(view_section_deleted, key3)  # key: Course code
                     
                     # Send the announcement
-                    await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_section)
-                    await send_to_subscribers(bot, key3, embed_delete_section)
+                    await channels.get(key3[0: 4], channels['other']).send(embed=embed_delete_section, view=view_section_deleted)
+                    await send_to_subscribers(bot, key3, embed_delete_section, view_section_deleted)
                     changed = True
 
     return changed
