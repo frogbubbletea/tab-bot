@@ -1,27 +1,50 @@
-# 🍄 tab-bot
+<h1 style="text-align: center">
+    🍄
+    <br>
+    tab-bot
+</h1>
 
-Two Discord bots that does helpful stuff with course quotas in HKUST! 🐈‍⬛
+<h2 style="text-align: center">
+    Two Discord bots that does helpful things with course data in HKUST!
+</h2>
 
-https://discord.gg/RNmMMF6xHY
+<h3 style="text-align: center">
+    🐈‍⬛
+</h3>
 
+<p style="text-align: center">
+    Try them out in our <a href="https://discord.gg/RNmMMF6xHY">server</a>!
+</p>
 
 ## 🥁 Tab
-Tab searches the servers of UST to get course data and look for quota changes!
+Tab searches the servers of HKUST to get course data and look for changes!
 
-- Tab [se](https://youtu.be/FXsGCieXm1E)nds notifications to a Discord server when changes are recorded!
+- Tab [sends](https://youtu.be/FXsGCieXm1E) notifications to you when changes are recorded!
 - It updates every 1.5 minutes to catch changes as quickly as possible!
 
 ## 🍦 Hill
-Hill uses data collected by Tab to provide course info on demand! Using its slash commands, you can check:
+Hill uses data collected by Tab to provide course info on demand! Using its slash commands, you can look up:
 
 - Quotas
 - Sections (schedules, venues, instructors)
 - General information (pre-reqs, exclusions, descriptions)
-- Search courses by course code prefix and Common Core area
+- Courses by course code prefix and Common Core area
 
 Hill can also be added to other servers!
 
----
+## 🍋 Course notifications
+Our bots work together to notify you of changes to courses you care about! We offer two ways of receiving course notifications.
+
+- **✨ New! ✨** Course subscriptions
+<br>
+Subscribe to a course using Hill's commands, and Tab will DM you about its changes! You're in control of what you receive, course by course!
+<br>
+    > [!NOTE]<br>
+    > Discord only allows DMs between users sharing a mutual server. Even if you subscribed from another server, you're recommended to join our server so that Tab can DM you!
+<br>
+- Course channels
+<br>
+Tab also sends course notifications to our server, sorted into channels by course code prefix. You can toggle notifications for all courses with the same prefix by customizing notification settings for each course channel.
 
 ## 🖼️ Screenshots
 |||
@@ -42,6 +65,9 @@ Hill can also be added to other servers!
 | Using Hill's command: `/quota` | ![Using Hill's command: `/quota`](sample_screenshots/hill/quota.png) |
 | Using Hill's command: `/list` to show all courses with given prefix | ![Using Hill's command: `/list` to show all courses with given prefix](sample_screenshots/hill/list_prefix.png) |
 | Using Hill's command: `/list` to show all Common Core courses in a given area | ![Using Hill's command: `/list` to show all Common Core courses in a given area](sample_screenshots/hill/list_cc.png) |
+| Using Hill's command: `/sub sub` | ![Using Hill's command: `/sub sub`](sample_screenshots/hill/sub_sub.png) |
+| Using Hill's command: `/sub unsub` | ![Using Hill's command: `/sub unsub`](sample_screenshots/hill/sub_unsub.png) |
+| Using Hill's command: `/sub show` | ![Using Hill's command: `/sub show`](sample_screenshots/hill/sub_show.png) |
 ---
 
 ## 🌟 Credits
