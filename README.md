@@ -1,18 +1,18 @@
-<h1 style="text-align: center">
+<h1 align="center">
     🍄
     <br>
     tab-bot
 </h1>
 
-<h2 style="text-align: center">
+<h2 align="center">
     Two Discord bots that does helpful things with course data in HKUST!
 </h2>
 
-<h3 style="text-align: center">
+<h3 align="center">
     🐈‍⬛
 </h3>
 
-<p style="text-align: center">
+<p align="center">
     Try them out in our <a href="https://discord.gg/RNmMMF6xHY">server</a>!
 </p>
 
