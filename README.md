@@ -4,13 +4,13 @@
     tab-bot
 </h1>
 
-<h2 align="center">
-    Two Discord bots that does helpful things with course data in HKUST!
-</h2>
-
 <h3 align="center">
-    🐈‍⬛
+    Two Discord bots that does helpful things with course data in HKUST!<br>
 </h3>
+
+<p align="center">
+    🐈‍⬛
+</p>
 
 <p align="center">
     Try them out in our <a href="https://discord.gg/RNmMMF6xHY">server</a>!
@@ -35,15 +35,11 @@ Hill can also be added to other servers!
 ## 🍋 Course notifications
 Our bots work together to notify you of changes to courses you care about! We offer two ways of receiving course notifications.
 
-- **✨ New! ✨** Course subscriptions
-<br>
-Subscribe to a course using Hill's commands, and Tab will DM you about its changes! You're in control of what you receive, course by course!
-<br>
-    > [!NOTE]<br>
+- **✨ New! ✨** Course subscriptions<br>
+Subscribe to a course using Hill's commands, and Tab will DM you about its changes! You're in control of what you receive, course by course!<br>
+    > [!NOTE]
     > Discord only allows DMs between users sharing a mutual server. Even if you subscribed from another server, you're recommended to join our server so that Tab can DM you!
-<br>
-- Course channels
-<br>
+- Course channels<br>
 Tab also sends course notifications to our server, sorted into channels by course code prefix. You can toggle notifications for all courses with the same prefix by customizing notification settings for each course channel.
 
 ## 🖼️ Screenshots
