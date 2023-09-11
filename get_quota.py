@@ -1740,12 +1740,23 @@ async def download_quotas(bot, current_loop):
             json.dump(quotas, oldfile, indent=4)
         except:
             json.dump({}, oldfile, indent=4)
-    elif await check_diffs(bot=bot, new_quotas=quotas, old_quotas=open_old_quotas()):
-        oldfile = open('quotas_old.json', 'w', encoding='utf-8')
+    else:
         try:
-            json.dump(quotas, oldfile, indent=4)
-        except:
-            json.dump({}, oldfile, indent=4)
+            diff_found = await check_diffs(bot=bot, new_quotas=quotas, old_quotas=open_old_quotas())
+            if diff_found == True:
+                oldfile = open('quotas_old.json', 'w', encoding='utf-8')
+                try:
+                    json.dump(quotas, oldfile, indent=4)
+                except:
+                    json.dump({}, oldfile, indent=4)
+        except Exception as e:  # Error when checking diffs!
+            # Print exception to console
+            traceback.print_exc()
+
+            # Send exception to errors channel
+            await send_loop_exception(current_loop, "Diff check error!", e)
+            
+            return update_time()
 
     # Save quotas to json file
     outfile = open('quotas.json', 'w', encoding='utf-8')
