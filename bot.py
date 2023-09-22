@@ -83,7 +83,11 @@ async def update_quotas():
     print(f"Update finished: {update_time}: {update_quotas.current_loop}")
 
     # Send update confirmation message to quota-updates channel
-    update_channel = await bot.fetch_channel(1072569015089774622)
+    # Handle Discord API service issues
+    try:
+        update_channel = await bot.fetch_channel(1072569015089774622)
+    except:
+        return
 
     start_d = get_quota.disc_time(start_time, "d")  # Date in mm/dd/yyyy
     start_T = get_quota.disc_time(start_time, "T")  # Time (12h) in h:mm:ss
