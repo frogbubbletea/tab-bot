@@ -1,4 +1,4 @@
-# v2.2.2
+# v2.2.3
 # bot.py
 import discord
 from discord import app_commands
@@ -98,7 +98,7 @@ async def update_quotas():
         await update_channel.send(f"🔃 Updated! {start_d} {start_T} - {update_d} {update_T}: {update_quotas.current_loop}")
     except:
         return
-        
+
     # Confirm new subscribers and unsubscribe unreachable users
     await get_quota.check_on_everyone(bot)
 
