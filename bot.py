@@ -94,8 +94,11 @@ async def update_quotas():
     update_d = get_quota.disc_time(update_time, "d")
     update_T = get_quota.disc_time(update_time, "T")
 
-    await update_channel.send(f"🔃 Updated! {start_d} {start_T} - {update_d} {update_T}: {update_quotas.current_loop}")
-
+    try:
+        await update_channel.send(f"🔃 Updated! {start_d} {start_T} - {update_d} {update_T}: {update_quotas.current_loop}")
+    except:
+        return
+        
     # Confirm new subscribers and unsubscribe unreachable users
     await get_quota.check_on_everyone(bot)
 
