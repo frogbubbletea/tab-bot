@@ -425,12 +425,12 @@ def compose_message(course_code, page=0):
         quota_field += f"{trim_section(key):<8}| "
         
         # Total quotas
-        for i in range(4, 8):
+        for i in range(5, 9):
             quota_field += '{:<6}'.format(value[i].split("\n")[0])
         quota_field += "\n"
 
         # Check for reserved quotas
-        quota_of_section = value[4].split("\n")
+        quota_of_section = value[5].split("\n")
         # If there is reserved quotas, display in next line
         if len(quota_of_section) >= 3:
             for k in range(2, len(quota_of_section)):
