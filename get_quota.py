@@ -331,9 +331,9 @@ def format_section(section):
     
     # Add remarks
     # There will always be at most 1 remark per section
-    if section[8] != "\u00a0":  # Only make space if remarks field is non-empty
+    if section[9] != "\u00a0":  # Only make space if remarks field is non-empty
         # Split remarks into lines to remove redundant newlines
-        remarks_list_unfiltered = section[8].split("\n")
+        remarks_list_unfiltered = section[9].split("\n")
         # Remove empty lines
         remarks_list = [x for x in remarks_list_unfiltered if x != '' and x != '\xa0']
         # Display the remarks
@@ -1104,7 +1104,7 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                 # 🍅 New section!
                 if key2 not in old_quotas[key]['sections']:
                     # Quota of the new section
-                    quota_new = value2[4].split("\n")
+                    quota_new = value2[5].split("\n")
                     # await channels.get(key[0: 4], channels['other']).send(f"🍅 **New section!**\n{value.get('title', 'Error')}: {key2}\nQuota: {quota_new}")
                     
                     # Prepare change announcement embed: course name, section name
@@ -1138,7 +1138,7 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     # Display quota of section: Total
                     new_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                     new_section_quotas += f"{trim_section(key2):<8}| "
-                    for i in range(4, 8):
+                    for i in range(5, 9):
                         new_section_quotas += '{:<6}'.format(value2[i].split("\n")[0])
                     
                     # Display quota of section: reserved
@@ -1179,8 +1179,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                 
                 else:
                     # 🍋 Quota changed!
-                    quota_section_old = old_quotas[key]['sections'][key2][4].split("\n")
-                    quota_section_new = value2[4].split("\n")
+                    quota_section_old = old_quotas[key]['sections'][key2][5].split("\n")
+                    quota_section_new = value2[5].split("\n")
 
                     # Total quota
                     quota_old = quota_section_old[0]
@@ -1225,7 +1225,7 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                         # Display (total) quota change
                         changed_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                         changed_section_quotas += f"{trim_section(key2):<8}| "
-                        for i in range(4, 8):
+                        for i in range(5, 9):
                             changed_section_quotas += '{:<6}'.format(value2[i].split("\n", 1)[0])
 
                         # Add field (Total quotas)
@@ -1472,8 +1472,8 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     
                     # 🫐 Remarks changed!
                     # Initialize list of values
-                    remarks_list_new = value2[8].split("\n")
-                    remarks_list_old = old_quotas[key]['sections'][key2][8].split("\n")
+                    remarks_list_new = value2[9].split("\n")
+                    remarks_list_old = old_quotas[key]['sections'][key2][9].split("\n")
                     # Remove empty list elements, including special space characters
                     # Remove "> " from the beginning of line too
                     remarks_list_new = [r.strip("> ") for r in remarks_list_new if r not in ['', '\xa0', '\u00a0']]
@@ -1609,11 +1609,11 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     # Display quota of section: total
                     delete_section_quotas = f"```\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
                     delete_section_quotas += f"{trim_section(key4):<8}| "
-                    for i in range(4, 8):
+                    for i in range(5, 9):
                         delete_section_quotas += '{:<6}'.format(value4[i].split("\n", 1)[0])
                     
                     # Display quota of section: reserved
-                    quota_delete = value4[4].split("\n")
+                    quota_delete = value4[5].split("\n")
                     delete_res_dict = {}
                     if len(quota_delete) >= 3:
                         # Dict to store dept names and numbers
