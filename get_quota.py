@@ -1509,6 +1509,71 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                             pass
                         changed = True
                     
+                    # 🍑 TA/IA/GTA changed!
+                    # Initialize list of values
+                    ta_list_new = value2[4].split("\n")
+                    ta_list_old = old_quotas[key]['sections'][key2][4].split("\n")
+                    # Remove empty list elements
+                    ta_list_new = [ta for ta in ta_list_new if ta != ""]
+                    ta_list_old = [ta for ta in ta_list_old if ta != ""]
+                    # Remove duplicates
+                    # Create a dict using the list items as keys to automatically remove any duplicates because dicts cannot have duplicate keys
+                    # Convert dict back into a list, assign it to the list of instructors
+                    ta_list_new = list(dict.fromkeys(ta_list_new))
+                    ta_list_old = list(dict.fromkeys(ta_list_old))
+
+                    # Prepare change announcement text: Header, course name, section name, section ID
+                    embed_ta_change = discord.Embed(
+                        title=f"{value.get('title', 'Error')}: {key2}",
+                        color=0xf5bde6  # Peach
+                    )
+                    # Prepare header of change announcement
+                    embed_ta_change.set_author(name="🍑 TA/IA/GTA changed!")
+
+                    # Check additions and removals
+                    ta_deltas = list_diffs(ta_list_new, ta_list_old)
+                    ta_diffed = diff_highlight(ta_list_new, ta_list_old)
+
+                    # Add old TA field
+                    # Remove "diff" if field is empty
+                    ta_old_field = "```"
+                    if len(ta_diffed[1]) > 0:
+                        ta_old_field += "diff\n"  # Diff syntax highlighting
+                        ta_old_field += "\n".join(ta_diffed[1])
+                    ta_old_field += "\n```"
+                    # Add field to embed
+                    embed_ta_change.add_field(
+                        name="🍑 Old",
+                        value=ta_old_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Add new TA field
+                    ta_new_field = "```"
+                    if len(ta_diffed[0]) > 0:
+                        ta_new_field += "diff\n"  # Diff syntax highlighting
+                        ta_new_field += "\n".join(ta_diffed[0])
+                    ta_new_field += "\n```"
+                    # Add field to embed
+                    embed_ta_change.add_field(
+                        name="🍑 New",
+                        value=ta_new_field,
+                        inline=True  # Split view comparison
+                    )
+
+                    # Display number of changes
+                    embed_ta_change.set_footer(text=f"🍑 {len(ta_deltas[0])} additions, {len(ta_deltas[1])} removals")
+
+                    # If there is TA change, send the announcement
+                    if ta_deltas != ([], []):
+                        # Wrapped to handle API issues
+                        try:
+                            await channels.get(key[0: 4], channels['other']).send(embed=embed_ta_change, view=view_new)
+                            await send_to_subscribers(bot, key, embed_ta_change, view_new)
+                        except:
+                            pass
+                        changed = True
+
                     # 🫐 Remarks changed!
                     # Initialize list of values
                     remarks_list_new = value2[9].split("\n")
