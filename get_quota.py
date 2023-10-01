@@ -320,8 +320,8 @@ def format_section(section):
         formatted_schedule_row += f"{'Inst.':<6}| {instructor_list[i]}\n"
 
         # Uncomment if TA display format is corrected
-        # Only add TA row if field is not empty
-        if section[4] != "":
+        # Only add TA row if it is not empty
+        if ta_list[i] != "":
             try:
                 formatted_schedule_row += f"{'TA':<6}| {ta_list[i]}\n"
             except IndexError:  # Handle if not all rows have TA: display nothing
@@ -570,7 +570,7 @@ def compose_sections(course_code, page=0):
                                    timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     # Calculate max page index
-    page_size = 5
+    page_size = 3
     max_page = find_max_page(course_dict['sections'], page_size)
 
     # Send error message if there is no sections
