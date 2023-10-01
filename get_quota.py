@@ -317,15 +317,15 @@ def format_section(section):
         # Add time, venue and instructor rows
         formatted_schedule_row += f"{'Time':<6}| {time_list[i]}\n"
         formatted_schedule_row += f"{'Venue':<6}| {venue_list[i]}\n"
-        formatted_schedule_row += f"{'By':<6}| {instructor_list[i]}\n"
+        formatted_schedule_row += f"{'Inst.':<6}| {instructor_list[i]}\n"
 
         # Uncomment if TA display format is corrected
         # Only add TA row if field is not empty
-        # if section[4] != "":
-        #     try:
-        #         formatted_schedule_row += f"{'TA':<6}| {ta_list[i]}\n"
-        #     except IndexError:  # Handle if not all rows have TA: display nothing
-        #         pass
+        if section[4] != "":
+            try:
+                formatted_schedule_row += f"{'TA':<6}| {ta_list[i]}\n"
+            except IndexError:  # Handle if not all rows have TA: display nothing
+                pass
 
         # End one row
         formatted_schedule_row += "\n"
@@ -344,29 +344,29 @@ def format_section(section):
     
     # Add TA/IA/GTA
     # Comment if TA display format is corrected
-    if section[4] != "":  # Only make space if TA/IA/GTA field is non-empty
-        # # Split TAs into lines
-        # ta_list = section[4].split("\n")
-        # # Remove empty list elements
-        # ta_list = [ta for ta in ta_list if ta != ""]
-        # # Remove duplicates
-        # ta_list = list(dict.fromkeys(ta_list))
+    # if section[4] != "":  # Only make space if TA/IA/GTA field is non-empty
+    #     # # Split TAs into lines
+    #     # ta_list = section[4].split("\n")
+    #     # # Remove empty list elements
+    #     # ta_list = [ta for ta in ta_list if ta != ""]
+    #     # # Remove duplicates
+    #     # ta_list = list(dict.fromkeys(ta_list))
 
-        # Display the TAs
-        formatted_ta = f"{'TA':<6}| {ta_list[0]}\n"
-        formatted_ta += "\n"
+    #     # Display the TAs
+    #     formatted_ta = f"{'TA':<6}| {ta_list[0]}\n"
+    #     formatted_ta += "\n"
         
-        # Add TAs to formatted string
-        # Count chars before adding to formatted string
-        # If formatted string exceeded field length limit: make new string (field)
-        if len(formatted_ta) + len(formatted_section[-1]) > 1020:  #  End of codeblock "\n```" is 4 chars long
-            # Add TAs to new string (new field)
-            formatted_section[-1] += "\n```"  # End field
-            formatted_section.append("```\n")  # Start new field
-            formatted_section[-1] += formatted_ta
-        # Formatted string hasn't exceeded length yet: add TAs to string
-        else:
-            formatted_section[-1] += formatted_ta
+    #     # Add TAs to formatted string
+    #     # Count chars before adding to formatted string
+    #     # If formatted string exceeded field length limit: make new string (field)
+    #     if len(formatted_ta) + len(formatted_section[-1]) > 1020:  #  End of codeblock "\n```" is 4 chars long
+    #         # Add TAs to new string (new field)
+    #         formatted_section[-1] += "\n```"  # End field
+    #         formatted_section.append("```\n")  # Start new field
+    #         formatted_section[-1] += formatted_ta
+    #     # Formatted string hasn't exceeded length yet: add TAs to string
+    #     else:
+    #         formatted_section[-1] += formatted_ta
 
     # Add remarks
     # There will always be at most 1 remark per section
