@@ -25,8 +25,8 @@ load_dotenv()
 TOKEN = os.getenv('HILL_TOKEN')
 
 # Load admin's ID and test server ID
-admin_id = 740098404688068641
-test_server_id = 958651015064854548
+admin_id = int(os.getenv('ADMIN_ID'))
+test_server_id = int(os.getenv('TEST_SERVER_ID'))
 
 # Uncomment when running on replit (1/2)
 # from keep_alive import keep_alive
@@ -155,8 +155,10 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
         try:
             view = QuotaPage(mode="i", course_code=course_code)
             view.clear_items()
-            # Add source button linking to course entry in original course quota website
+            # Add source and reviews button
             get_quota.add_source_url(view, course_code)
+            get_quota.add_space_url(view, course_code)
+
             await interaction.edit_original_response(embed=embed_info, view=view)
         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
@@ -344,6 +346,10 @@ async def list_autocomplete(
 async def debug(interaction: discord.Interaction, file: str) -> None:
     await interaction.response.defer(thinking=True)
 
+    if interaction.user.id != admin_id:
+        await interaction.edit_original_response(content="🚫 This command can only be ran by the admin!")
+        return
+
     # Send list of connected servers
     if file == "guild_list":
         # Put list of guilds into txt file
@@ -373,8 +379,24 @@ async def debug_autocomplete(
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
     file_list = ['quotas', 'quotas_old', 'subscribers', 'guild_list']
-    file_list = [app_commands.Choice(name=file, value=file) for file in file_list]
+    file_list = [app_commands.Choice(name=file, value=file) for file in file_list if current.upper() in file.upper()]
     return file_list
+
+# "leave" command
+# Remove the bot from a server
+@bot.tree.command(description="Remove the bot from a server!", guild=discord.Object(test_server_id))
+async def leave(interaction: discord.Interaction, id: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    if interaction.user.id != admin_id:
+        await interaction.edit_original_response(content="🚫 This command can only be ran by the admin!")
+        return
+
+    try:
+        await bot.get_guild(int(id)).leave()
+        await interaction.edit_original_response(content=f"🙋‍♀️ Left server with ID: {id})!")
+    except:
+        await interaction.edit_original_response(content=f"🤷‍♀️ Bot not in server!")
 
 # Slash commands end
 

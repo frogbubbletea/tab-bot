@@ -84,9 +84,32 @@ def get_source_url(course_code, mode=None):
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code[0: 4]}#{course_code}"
     return source_url
 
+# Get URL to course page in USTSPACE
+def get_space_url(course_code):
+    return f"https://ust.space/review/{course_code}"
+
 # Add URL to course entry in HKUST Class Schedule & Quota website
 def add_source_url(view: discord.ui.View, course_code: str, mode=None):
-    view.add_item(discord.ui.Button(label="Source", style=discord.ButtonStyle.link, url=get_source_url(course_code, mode)))
+    view.add_item(
+        discord.ui.Button(
+            label="Source",
+            style=discord.ButtonStyle.link,
+            emoji='📡',
+            url=get_source_url(course_code, mode)
+        )
+    )
+    return view
+
+# Add URL to course page in USTSPACE
+def add_space_url(view: discord.ui.View, course_code: str):
+    view.add_item(
+        discord.ui.Button(
+            label="Reviews", 
+            style=discord.ButtonStyle.link, 
+            emoji='🌌',
+            url=get_space_url(course_code)
+        )
+    )
     return view
 
 # Dict containing all subject channels
