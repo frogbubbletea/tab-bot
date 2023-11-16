@@ -25,7 +25,7 @@ os.chdir(dname)
 # Winter: 20
 # Spring: 30
 # Summer: 40
-semester_code = 2310  # 23-24 Fall
+semester_code = 2320  # 23-24 Winter
 
 def trim_section(section_code):
     section_trim = re.findall("[A-Z]+[0-9]*[A-Z]*", section_code)[0]
