@@ -9,6 +9,8 @@ import json
 from datetime import datetime, timezone
 import re
 import traceback
+import itertools
+import urllib
 
 import config
 import subject_channels
@@ -78,7 +80,7 @@ def find_sect_matching(course_dict):
 
 # Get source URL on original UST course quota website for "Source" button
 def get_source_url(course_code, mode=None):
-    if mode == "l":  # /list command, link to top of website
+    if mode == "l":  # /search by prefix
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code}"
     else:
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code[0: 4]}#{course_code}"
@@ -150,6 +152,34 @@ def get_prefix_list():
 
     return prefix_list
 
+# Get list of all instances of a section attribute
+def get_attribute_list(attribute: int):
+    # Check if quotas file is available
+    quotas = open_quotas()
+    if not check_quotas_validity():
+        return []
+    
+    quotas.pop('time')
+    
+    # Extract attribute list
+    attributes = list(quotas.values())
+    attributes = [list(a['sections'].values()) for a in attributes]
+    attributes = list(itertools.chain.from_iterable(attributes))  # Unnest list extracted from sections dict
+    attributes = [x for a in attributes for x in a[attribute].split("\n")]
+    attributes = list(dict.fromkeys(attributes))  # Remove duplicates
+    attributes = [a for a in attributes if a != ""]  # Remove empty elements
+
+    return attributes
+
+# Get list of all instances of a section attribute in a course
+def get_attributes_from_course(attribute: int, course: dict):
+    attributes = list(course['sections'].values())
+    attributes = [x for a in attributes for x in a[attribute].split("\n")]
+    attributes = list(dict.fromkeys(attributes))  # Remove duplicates
+    attributes = [a for a in attributes if a != ""]  # Remove empty elements
+
+    return attributes
+    
 # Get list of all common core areas
 def get_cc_areas():
     quotas = open_quotas()
@@ -639,7 +669,7 @@ def compose_sections(course_code, page=0):
 
     return embed_sections
 
-# Compose message of all courses with given prefix for "list" command
+# Compose search results for "search" command
 def compose_list(prefix, page=0):
     quotas = open_quotas()
 
@@ -647,23 +677,31 @@ def compose_list(prefix, page=0):
     if not check_quotas_validity():
         return "unavailable"  # Error code: quotas file is unavailable
     
-    # Get list of common core areas
+    # Get list of common core areas and instructors
     cc_areas = get_cc_areas()
+    instructors = get_attribute_list(3) + get_attribute_list(4)  # Instructors and TAs
 
     # Check if prefix is valid
     prefix_list = get_prefix_list()
-    if (prefix not in prefix_list) and (prefix not in cc_areas):
+    if prefix not in prefix_list + cc_areas + instructors:
         return "key"  # Error code: prefix is invalid
+    
+    # Prepare embed header
+    list_header = "🍊 Searching by "
     
     # Get dict of all courses with prefix/CC area
     if prefix in cc_areas:
         prefix_courses = {k: v for k, v in quotas.items() if k != "time" and prefix in v.get('info').get('ATTRIBUTES', '')}
         list_title = prefix.replace("Common Core", "")  # "Common Core" will be displayed in header (author)
-        list_header = "🍊 Common Core courses in"  # Embed header (author) text
+        list_header += "Common Core area:"  # Embed header (author) text
+    elif prefix in instructors:
+        prefix_courses = {k: v for k, v in quotas.items() if k != "time" and prefix in (get_attributes_from_course(3, v) + get_attributes_from_course(4, v))}
+        list_title = prefix  # Change nothing
+        list_header += "instructor:"
     else:
         prefix_courses = {k: v for k, v in quotas.items() if prefix in k}
         list_title = prefix  # Change nothing
-        list_header = "🍊 Courses with prefix"
+        list_header += "prefix:"
 
     # Prepare embed to display courses in
     embed_list = discord.Embed(title=list_title,

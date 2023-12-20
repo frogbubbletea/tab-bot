@@ -191,28 +191,28 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 
 # "list" command
-# List all courses with given prefix
-@bot.tree.command(description="List all courses with a given prefix/area!")
-async def list(interaction: discord.Interaction, prefix: str) -> None:
+# List all courses with given query
+@bot.tree.command(description="Search courses by prefix/instructor/common core area!")
+async def search(interaction: discord.Interaction, query: str) -> None:
     await interaction.response.defer(thinking=True)
     cc_areas = get_quota.get_cc_areas()
+    instructors = get_quota.get_attribute_list(3) + get_quota.get_attribute_list(4)
 
-    if prefix not in cc_areas:  # Do not uppercase common core area arguments
-        prefix = prefix.replace(" ", "").upper()
-    embed_list = get_quota.compose_list(prefix)
+    # Submit query to search function
+    embed_list = get_quota.compose_list(query)
 
     # Error: Course data unavailable
     if embed_list == "unavailable":
         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-    # Error: invalid prefix
+    # Error: invalid query
     elif embed_list == "key":
-        await interaction.edit_original_response(content="⚠️ No courses found with this prefix!")
+        await interaction.edit_original_response(content="⚠️ No courses found!")
     else:
-        view = QuotaPage(mode="l", course_code=prefix)
-        # Do not add source link if common core is given
-        if prefix not in cc_areas:
-            # Add source button linking to course entry in original course quota website
-            get_quota.add_source_url(view, prefix, "l")
+        view = QuotaPage(mode="l", course_code=query)
+        # Add source button linking to course entry in original course quota website
+        # Only add source URL for prefix searches
+        if query not in cc_areas + instructors:
+            get_quota.add_source_url(view, query, "l")
         await interaction.edit_original_response(embed=embed_list, view=view)
 
 # "sub" command group
@@ -325,17 +325,22 @@ async def unsub_autocomplete(
     ][0: 25]
     return data
 
-# Autocomplete for "list" command
-@list.autocomplete('prefix')
-async def list_autocomplete(
+# Autocomplete for "search" command
+@search.autocomplete('query')
+async def search_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
     prefix_list = get_quota.get_prefix_list()
+    instructors = get_quota.get_attribute_list(3) + get_quota.get_attribute_list(4)
     cc_areas = get_quota.get_cc_areas()
+
+    # Combine all lists into search suggestion
     prefix_list.extend(cc_areas)
-    data = [app_commands.Choice(name=prefix, value=prefix)
-            for prefix in prefix_list if current.replace(" ", "").upper() in prefix.replace(" ", "").upper()
+    prefix_list.extend(instructors)
+
+    data = [app_commands.Choice(name=query, value=query)
+            for query in prefix_list if current.replace(" ", "").upper() in query.replace(" ", "").upper()
             ][0: 25]
     return data
 
