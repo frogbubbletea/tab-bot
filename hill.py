@@ -210,8 +210,10 @@ async def search(interaction: discord.Interaction, query: str) -> None:
     else:
         view = QuotaPage(mode="l", course_code=query)
         # Add source button linking to course entry in original course quota website
-        # Only add source URL for prefix searches
-        if query not in cc_areas + instructors:
+        # Only add source URL for prefix and instructor searches
+        if query in instructors:
+            get_quota.add_source_url(view, query, "i")
+        elif query not in cc_areas + instructors:
             get_quota.add_source_url(view, query, "l")
         await interaction.edit_original_response(embed=embed_list, view=view)
 

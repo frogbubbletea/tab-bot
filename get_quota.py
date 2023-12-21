@@ -82,6 +82,8 @@ def find_sect_matching(course_dict):
 def get_source_url(course_code, mode=None):
     if mode == "l":  # /search by prefix
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code}"
+    elif mode == "i":  # /search by instructor
+        source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/instructor/{urllib.parse.quote_plus(course_code)}"
     else:
         source_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{course_code[0: 4]}#{course_code}"
     return source_url
