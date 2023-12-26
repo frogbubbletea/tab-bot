@@ -457,7 +457,7 @@ async def history_course_code_autocomplete(
     courses = []
     for s in semester_list:
         courses += get_quota.get_course_list(s)
-    courses = list(dict.fromkeys(courses))  # Remove duplicates
+    courses = sorted(list(dict.fromkeys(courses)))  # Remove duplicates
 
     data = [app_commands.Choice(name=course, value=course)
             for course in courses if current.replace(" ", "").upper() in course.upper()
@@ -477,7 +477,7 @@ async def history_semester_string_autocomplete(
     semester_list = get_quota.find_historical_data()
 
     # Convert filename into semester names
-    semester_list = sorted([get_quota.semester_code_to_string(int(s)) for s in semester_list], reverse=True)  # Is this needed?
+    semester_list = [get_quota.semester_code_to_string(int(s)) for s in semester_list]
 
     data = [app_commands.Choice(name=semester_string, value=semester_string)
         for semester_string in semester_list if current.replace(" ", "").upper() in semester_string.upper()

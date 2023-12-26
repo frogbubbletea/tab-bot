@@ -244,7 +244,7 @@ def find_historical_data():
     semester_list = list(filter(history_files_regex.match, semester_list))
     semester_list = [s[6: 10] for s in semester_list]
 
-    return semester_list
+    return sorted(semester_list, reverse=True)  # Ensure consistent order in autocomplete lists
 
 # Get subscribers file
 def open_subs():
