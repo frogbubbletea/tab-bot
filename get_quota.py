@@ -29,6 +29,36 @@ os.chdir(dname)
 # Summer: 40
 semester_code = 2320  # 23-24 Winter
 
+# Dict mapping semester name to code
+sem_dict = {
+        "Fall": 10,
+        "Winter": 20,
+        "Spring": 30,
+        "Summer": 40
+    }
+
+# Convert semester string (name) to code
+def semester_string_to_code(semester_string):
+    try:
+        year = semester_string[2: 4]
+        sem = semester_string[8: ]
+
+        sem_code = str(sem_dict[sem])
+        
+        return int(year + sem_code)
+    except:
+        return -1
+
+# Convert semester code to string
+def semester_code_to_string(semester: int):
+    year = int(semester / 100)
+    sem_idx = int(semester % 100 / 10) - 1
+
+    try:
+        return f"20{year}-{year + 1} {list(sem_dict.keys())[sem_idx]}"
+    except Exception as e:
+        return e
+
 def trim_section(section_code):
     section_trim = re.findall("[A-Z]+[0-9]*[A-Z]*", section_code)[0]
     return section_trim
@@ -131,8 +161,8 @@ async def send_loop_exception(current_loop, error_type, error_msg):
         return
 
 # Get list of all course codes
-def get_course_list():
-    quotas = open_quotas()
+def get_course_list(semester=""):
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
     if not check_quotas_validity():
@@ -202,6 +232,14 @@ def get_cc_areas():
     cc_areas = [z for z in cc_areas if "Common Core" in z]
 
     return cc_areas
+
+# Get list of all historical course data in directory
+def find_historical_data():
+    semester_list = os.listdir()
+    history_files_regex = re.compile("quotas\d{4}\.json")
+    semester_list = list(filter(history_files_regex.match, semester_list))
+
+    return semester_list
 
 # Get subscribers file
 def open_subs():
@@ -309,9 +347,9 @@ def check_if_subscribed(course_code, id):
     else:
         return False
 
-def open_quotas():
+def open_quotas(semester=""):
     try:
-        quotas = open('quotas.json', encoding='utf-8')
+        quotas = open(f'quotas{semester}.json', encoding='utf-8')
         quotas = json.load(quotas)
         return quotas
     except:
@@ -326,8 +364,8 @@ def open_old_quotas():
         return False
 
 # If quota searching is interrupted by network issues, quotas file is incomplete and does not contain the update time
-def check_quotas_validity():
-    quotas = open_quotas()
+def check_quotas_validity(semester=""):
+    quotas = open_quotas(semester)
     if not quotas:
         return False
     try:
@@ -468,11 +506,12 @@ def find_max_page(dict, page_size):
     return max_page
 
 # Compose message of course quotas for "quota" command
-def compose_message(course_code, page=0):
-    quotas = open_quotas()
+# `semester`: semester code
+def compose_message(course_code, page=0, semester=""):
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return "unavailable"
 
     # Check if course code is valid
@@ -507,10 +546,16 @@ def compose_message(course_code, page=0):
     # Include section matching message if there is one
     sect_matching = find_sect_matching(course_dict)
     
+    # Use alternate color and heading for historical data embeds
+    quota_color = config.color_success if semester == "" else config.color_history
+    quota_heading = "🍊 Quotas of"
+    if (semester != ""):
+        quota_heading = f"🗓️ {semester_code_to_string(semester)}\n" + quota_heading
+
     # Compose list
     embed_quota = discord.Embed(title=f"{course_dict['title']}",
                                 description=sect_matching,
-                                color=config.color_success,
+                                color=quota_color,
                                 timestamp=time_from_stamp(quotas['time']))  # Quota update time
 
     quota_field = f"```ansi\n{'Section':<8}| {'Quota':<6}{'Enrol':<6}{'Avail':<6}{'Wait':<6}\n"
@@ -549,13 +594,14 @@ def compose_message(course_code, page=0):
 
     # Embed timestamp (update time) is shown behind footer
     embed_quota.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
-    embed_quota.set_author(name="🍊 Quotas of")
+    embed_quota.set_author(name=quota_heading)
 
     return embed_quota
 
 # Compose message of course info for "info" command
-def compose_info(course_code):
-    quotas = open_quotas()
+# `semester`: semester code
+def compose_info(course_code, semester=""):
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
     if not check_quotas_validity():
@@ -570,8 +616,14 @@ def compose_info(course_code):
         if course_code == "time":
             return "key"
     
+    # Use alternate color and heading for historical data embeds
+    info_color = config.color_success if semester == "" else config.color_history
+    info_heading = "🍊 Information about"
+    if semester != "":
+        info_heading = f"🗓️ {semester_code_to_string(semester)}\n" + info_heading
+
     embed_info = discord.Embed(title=f"{course_dict['title']}",
-                               color=config.color_success,
+                               color=info_color,
                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     for key, value in course_dict['info'].items():
@@ -595,13 +647,14 @@ def compose_info(course_code):
                 embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
 
     embed_info.set_footer(text=f"🕒 Last updated")
-    embed_info.set_author(name="🍊 Information about")
+    embed_info.set_author(name=info_heading)
 
     return embed_info
 
 # Compose message of course sections, instructors, schedules for "sections" command
-def compose_sections(course_code, page=0):
-    quotas = open_quotas()
+# `semester`: semester code
+def compose_sections(course_code, page=0, semester=""):
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
     if not check_quotas_validity():
@@ -618,10 +671,18 @@ def compose_sections(course_code, page=0):
     
     # Include section matching message if there is one
     sect_matching = find_sect_matching(course_dict)
+
+    # Use alternate color and heading for historical data embeds
+    sections_color = config.color_success if semester == "" else config.color_history
+    sections_heading = "🍊 Sections of"
+    if (semester != ""):
+        sections_heading = f"🗓️ {semester_code_to_string(semester)}\n" + sections_heading
+    # if (semester != ""):
+    #     sect_matching = f"🗓️ {semester_code_to_string(semester)}\n" + sect_matching
     
     embed_sections = discord.Embed(title=f"{course_dict['title']}",
                                    description=sect_matching,
-                                   color=config.color_success,
+                                   color=sections_color,
                                    timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
     # Calculate max page index
@@ -667,12 +728,12 @@ def compose_sections(course_code, page=0):
 
     # Embed timestamp (update time) is shown behind footer
     embed_sections.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}\n🕒 Last updated")
-    embed_sections.set_author(name="🍊 Sections of")
+    embed_sections.set_author(name=sections_heading)
 
     return embed_sections
 
 # Compose search results for "search" command
-def compose_list(prefix, page=0):
+def compose_list(prefix, page=0, semester=""):
     quotas = open_quotas()
 
     # Check if quotas file is available
