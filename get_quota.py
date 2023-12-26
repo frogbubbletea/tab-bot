@@ -38,14 +38,18 @@ sem_dict = {
     }
 
 # Convert semester string (name) to code
-def semester_string_to_code(semester_string):
+def semester_string_to_code(semester_string, check=True):
     try:
         year = semester_string[2: 4]
         sem = semester_string[8: ]
 
         sem_code = str(sem_dict[sem])
+
+        semester_result = year + sem_code
         
-        return int(year + sem_code)
+        if check and semester_result not in find_historical_data():
+            return -1
+        return int(semester_result)
     except:
         return -1
 
@@ -165,7 +169,7 @@ def get_course_list(semester=""):
     quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return []
     
     courses = list(quotas.keys())
@@ -173,9 +177,9 @@ def get_course_list(semester=""):
     return courses
 
 # Get list of all course code prefixes
-def get_prefix_list():
+def get_prefix_list(semester=""):
     # Get course list
-    courses = get_course_list()
+    courses = get_course_list(semester)
 
     # Trim all course codes to prefix only
     prefix_list = [x[0: 4] for x in courses]  # All prefixes are 4 letters long
@@ -185,10 +189,10 @@ def get_prefix_list():
     return prefix_list
 
 # Get list of all instances of a section attribute
-def get_attribute_list(attribute: int):
+def get_attribute_list(attribute: int, semester=""):
     # Check if quotas file is available
-    quotas = open_quotas()
-    if not check_quotas_validity():
+    quotas = open_quotas(semester)
+    if not check_quotas_validity(semester):
         return []
     
     quotas.pop('time')
@@ -213,11 +217,11 @@ def get_attributes_from_course(attribute: int, course: dict):
     return attributes
     
 # Get list of all common core areas
-def get_cc_areas():
-    quotas = open_quotas()
+def get_cc_areas(semester=""):
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return []
     
     # Remove update time entry
@@ -238,6 +242,7 @@ def find_historical_data():
     semester_list = os.listdir()
     history_files_regex = re.compile("quotas\d{4}\.json")
     semester_list = list(filter(history_files_regex.match, semester_list))
+    semester_list = [s[6: 10] for s in semester_list]
 
     return semester_list
 
@@ -604,7 +609,7 @@ def compose_info(course_code, semester=""):
     quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return "unavailable"
     
     # Check if course code is valid
@@ -657,7 +662,7 @@ def compose_sections(course_code, page=0, semester=""):
     quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return "unavailable"
     
     # Check if course code is valid
@@ -734,18 +739,18 @@ def compose_sections(course_code, page=0, semester=""):
 
 # Compose search results for "search" command
 def compose_list(prefix, page=0, semester=""):
-    quotas = open_quotas()
+    quotas = open_quotas(semester)
 
     # Check if quotas file is available
-    if not check_quotas_validity():
+    if not check_quotas_validity(semester):
         return "unavailable"  # Error code: quotas file is unavailable
     
     # Get list of common core areas and instructors
-    cc_areas = get_cc_areas()
-    instructors = get_attribute_list(3) + get_attribute_list(4)  # Instructors and TAs
+    cc_areas = get_cc_areas(semester)
+    instructors = get_attribute_list(3, semester) + get_attribute_list(4, semester)  # Instructors and TAs
 
     # Check if prefix is valid
-    prefix_list = get_prefix_list()
+    prefix_list = get_prefix_list(semester)
     if prefix not in prefix_list + cc_areas + instructors:
         return "key"  # Error code: prefix is invalid
     
@@ -766,9 +771,14 @@ def compose_list(prefix, page=0, semester=""):
         list_title = prefix  # Change nothing
         list_header += "prefix:"
 
+    # Use alternate color and heading for historical data embeds
+    list_color = config.color_success if semester == "" else config.color_history
+    if (semester != ""):
+        list_header = f"🗓️ {semester_code_to_string(semester)}\n" + list_header
+
     # Prepare embed to display courses in
     embed_list = discord.Embed(title=list_title,
-                               color=config.color_success,
+                               color=list_color,
                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
 
     # Calculate max page index

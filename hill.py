@@ -316,6 +316,33 @@ async def history_info(interaction: discord.Interaction, course_code: str, semes
         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
 
+# "history search" command
+# Lists all courses with given query in previous semester
+@history_group.command(name="search", description="Search courses in a previous semester by prefix/instructor/common core area!")
+async def history_search(interaction: discord.Interaction, query: str, semester_string: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    semester = get_quota.semester_string_to_code(semester_string)
+    if semester == -1:  # Error: invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
+
+    cc_areas = get_quota.get_cc_areas(semester)
+    instructors = get_quota.get_attribute_list(3, semester) + get_quota.get_attribute_list(4, semester)
+
+    # Submit query to search function
+    embed_list = get_quota.compose_list(query, semester=semester)
+
+    # Error: Course data unavailable
+    if embed_list == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: invalid query
+    elif embed_list == "key":
+        await interaction.edit_original_response(content="⚠️ No courses found!")
+    else:
+        view = QuotaPage(mode="l", course_code=query, semester=semester)
+        await interaction.edit_original_response(embed=embed_list, view=view)
+
 # Add command group to command tree
 bot.tree.add_command(history_group)
 
@@ -427,9 +454,6 @@ async def history_course_code_autocomplete(
 ) -> typing.List[app_commands.Choice[str]]:
     semester_list = get_quota.find_historical_data()
 
-    # Convert filenames into semester codes
-    semester_list = [s[6: 10] for s in semester_list]
-
     courses = []
     for s in semester_list:
         courses += get_quota.get_course_list(s)
@@ -445,6 +469,7 @@ async def history_course_code_autocomplete(
 @history_quota.autocomplete('semester_string')
 @history_sections.autocomplete('semester_string')
 @history_info.autocomplete('semester_string')
+@history_search.autocomplete('semester_string')
 async def history_semester_string_autocomplete(
     interaction: discord.Interaction,
     current: str
@@ -452,7 +477,7 @@ async def history_semester_string_autocomplete(
     semester_list = get_quota.find_historical_data()
 
     # Convert filename into semester names
-    semester_list = [get_quota.semester_code_to_string(int(s[6: 10])) for s in semester_list]
+    semester_list = sorted([get_quota.semester_code_to_string(int(s)) for s in semester_list], reverse=True)  # Is this needed?
 
     data = [app_commands.Choice(name=semester_string, value=semester_string)
         for semester_string in semester_list if current.replace(" ", "").upper() in semester_string.upper()
@@ -492,6 +517,27 @@ async def search_autocomplete(
     data = [app_commands.Choice(name=query, value=query)
             for query in prefix_list if current.replace(" ", "").upper() in query.replace(" ", "").upper()
             ][0: 25]
+    return data
+
+# Autocomplete for `query` of "history search" command group
+@history_search.autocomplete('query')
+async def history_query_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    semester_list = get_quota.find_historical_data()
+
+    queries = []
+    for s in semester_list:
+        queries.extend(get_quota.get_prefix_list(s))
+        queries.extend(get_quota.get_attribute_list(3, s) + get_quota.get_attribute_list(4, s))
+        queries.extend(get_quota.get_cc_areas(s))
+    queries = list(dict.fromkeys(queries))  # Remove duplicates
+
+    data = [
+        app_commands.Choice(name=query, value=query)
+        for query in queries if current.replace(" ", "").upper() in query.replace(" ", "").upper()
+    ][0: 25]
     return data
 
 # "debug" command
