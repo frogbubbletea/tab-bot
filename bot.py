@@ -30,10 +30,6 @@ os.chdir(dname)
 load_dotenv()
 TOKEN = os.getenv('DISCORD_TOKEN')
 
-# Load admin's ID and test server ID
-admin_id = int(os.getenv('ADMIN_ID'))
-test_server_id = int(os.getenv('TEST_SERVER_ID'))
-
 # Uncomment when running on replit (1/2)
 # from keep_alive import keep_alive
 
@@ -137,9 +133,9 @@ async def on_guild_join(guild):
 # Slash commands start
 # "test" command
 # Tests bot status
-@bot.tree.command(description="Tests bot status", guild=discord.Object(test_server_id))
-async def test(interaction: discord.Interaction) -> None:
-    await interaction.response.send_message("Response")
+# @bot.tree.command(description="Tests bot status", guilds=bot.guilds)
+# async def test(interaction: discord.Interaction) -> None:
+#     await interaction.response.send_message("meow")
 
 # @bot.tree.command(description="Get quota information for a course!", guilds=bot.guilds)
 # async def quota(interaction: discord.Interaction, course_code: str) -> None:
@@ -159,16 +155,11 @@ async def test(interaction: discord.Interaction) -> None:
 # Text commands start
 # "sync" command
 # Syncs command tree with Discord
+@commands.guild_only()
 @bot.command()
 async def sync(ctx):
-    if ctx.author.id == admin_id:  # Owner's ID
-        # Sync global commands
+    if ctx.author.id == 740098404688068641:
         await bot.tree.sync()
-
-        # Sync guild specific commands
-        for guild in bot.guilds:
-            await bot.tree.sync(guild=guild)
-
         await ctx.send("👍 Commands synced!")
     else:
         await ctx.send("🚫 This command can only be ran by the admin!")

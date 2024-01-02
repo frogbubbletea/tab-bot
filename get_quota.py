@@ -1,8 +1,5 @@
 # get_quota.py
 import requests  # Requires requests 2.29.0!
-import aiohttp
-import asyncio
-import ssl
 import bs4
 
 import discord
@@ -17,10 +14,6 @@ import urllib
 
 import config
 import subject_channels
-
-# Change SSL context for quota website
-context = ssl.create_default_context()
-context.set_ciphers('DEFAULT')
 
 # Change working directory to wherever this is in
 abspath = os.path.abspath(__file__)
@@ -1899,139 +1892,15 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
     return changed
 
-def download_quotas_get_letters(url):
-    page = requests.get(url)
-
-    soup = bs4.BeautifulSoup(page.content, "html.parser")
-
-    letters = soup.select('.depts')[0]
-
-    return letters
-
-async def download_quotas_fetch(session, url):
-    async with session.request("GET", url, ssl_context=context) as response:
-        return await response.text()
-
-def download_quotas_parse(sub_page):
-    sub_soup = bs4.BeautifulSoup(sub_page, "html.parser")
-
-    classes = sub_soup.select('#classes > .course')
-
-    prefix_dict = {}
-
-    for course in classes:
-        try:
-            course_dict = {}
-
-            course_title = course.find("h2").get_text()
-        
-            course_code = course.select(".courseanchor > a")[0]["name"]
-        except:
-            continue
-        
-        # No more course info im lazy
-        # Course info start
-        course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
-        course_info_rows = course_info.select('tr')
-
-        info_dict = {}
-
-        # Special course info: matching
-        matching_info = course.find("div", {"class": "matching"})
-        if matching_info is not None:
-            matching_info = matching_info.get_text()
-            info_dict["MATCHING"] = matching_info
-
-        for row in course_info_rows:
-            try:
-                heading = row.find('th')
-                heading = heading.get_text("\n")
-
-                data = row.select('td')[0]
-                data = data.get_text("\n")
-
-                info_dict[heading] = data
-            except:
-                continue
-        # Course info end
-        
-        section_dict = {}
-        course_sections = course.select(".sections")[0]
-        course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
-
-        for idx, section in enumerate(course_sections):
-            # Append extra section times/instructor information to section entry (1/2)
-            if section['class'][0] in ["secteven", "sectodd"]:
-                continue
-
-            section_data = section.select("td")
-            section_cols = []
-            for col in section_data:
-                section_cols.append(col.get_text("\n"))
-            
-            # Append extra section times/instructor information to section entry (2/2)
-            # try:
-            #     next_section = course_sections[idx + 1]
-            #     if next_section['class'] in ["secteven", "sectodd"]:
-            #         extra_data = next_section.select("td")
-
-            #         for idx2, datum in enumerate(extra_data):
-            #             section_cols[idx2 + 1] += f"\n{datum}"
-            # except IndexError:
-            #     pass
-                
-            section_dict[section_cols[0]] = section_cols
-
-            try:
-                next = 1
-                while course_sections[idx + next]['class'][0] in ["secteven", "sectodd"]:
-                    next_section = course_sections[idx + next]
-                    if next_section['class'][0] in ["secteven", "sectodd"]:
-                        extra_data = next_section.select("td")
-
-                        for idx2, datum in enumerate(extra_data):
-                            section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n")
-                    
-                    next += 1
-            except IndexError:
-                pass
-        
-        # Add data to dictionary for course
-        course_dict['title'] = course_title
-        course_dict['sections'] = section_dict
-        course_dict['info'] = info_dict
-
-        prefix_dict[course_code] = course_dict
-
-    return prefix_dict
-
-async def download_quotas_fetch_and_parse(session, url):
-    sub_page = await download_quotas_fetch(session, url)
-    loop = asyncio.get_event_loop()
-    prefix_dict = await loop.run_in_executor(None, download_quotas_parse, sub_page)
-    return prefix_dict
-
-async def download_quotas_scrape(letters):
-    sub_urls = [f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{letter.get_text()}" for letter in letters]
-
-    async with aiohttp.ClientSession() as session:
-        return await asyncio.gather(
-            *(download_quotas_fetch_and_parse(session, url) for url in sub_urls)
-        )
-
 async def download_quotas(bot, current_loop):
     url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/"
     
     try:
-        # page = requests.get(url)
+        page = requests.get(url)
 
-        # soup = bs4.BeautifulSoup(page.content, "html.parser")
+        soup = bs4.BeautifulSoup(page.content, "html.parser")
     
-        # letters = soup.select('.depts')[0]
-
-        loop = asyncio.get_event_loop()
-        letters = await loop.run_in_executor(None, download_quotas_get_letters, url)
-
+        letters = soup.select('.depts')[0]
     except Exception as error:  # Failed to connect to server!
         # Print exception to console
         traceback.print_exc()
@@ -2043,113 +1912,107 @@ async def download_quotas(bot, current_loop):
 
     quotas = {}
 
-    # for letter in letters:
-    #     sub_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{letter.get_text()}"
+    for letter in letters:
+        sub_url = f"https://w5.ab.ust.hk/wcq/cgi-bin/{semester_code}/subject/{letter.get_text()}"
 
-    #     try:
-    #         async with aiohttp.ClientSession() as session:
-    #             sub_page = await download_quotas_fetch(session, sub_url)
-    #     except Exception as e:  # Timed out!
-    #         # Print exception to console
-    #         traceback.print_exc()
+        try:
+            sub_page = requests.get(sub_url, timeout=10)
+        except Exception as e:  # Timed out!
+            # Print exception to console
+            traceback.print_exc()
 
-    #         # Send exception to errors channel
-    #         await send_loop_exception(current_loop, "Timed out!", e)
+            # Send exception to errors channel
+            await send_loop_exception(current_loop, "Timed out!", e)
             
-    #         return update_time()
+            return update_time()
 
-    prefix_dicts = await download_quotas_scrape(letters)
+        sub_soup = bs4.BeautifulSoup(sub_page.content, "html.parser")
 
-    for d in prefix_dicts:
-        quotas.update(d)
+        classes = sub_soup.select('#classes > .course')
 
-        # sub_soup = bs4.BeautifulSoup(sub_page, "html.parser")
+        for course in classes:
+            try:
+                course_dict = {}
 
-        # classes = sub_soup.select('#classes > .course')
-
-        # for course in classes:
-        #     try:
-        #         course_dict = {}
-
-        #         course_title = course.find("h2").get_text()
+                course_title = course.find("h2").get_text()
             
-        #         course_code = course.select(".courseanchor > a")[0]["name"]
-        #     except:
-        #         continue
+                course_code = course.select(".courseanchor > a")[0]["name"]
+            except:
+                continue
             
-        #     # No more course info im lazy
-        #     # Course info start
-        #     course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
-        #     course_info_rows = course_info.select('tr')
+            # No more course info im lazy
+            # Course info start
+            course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
+            course_info_rows = course_info.select('tr')
 
-        #     info_dict = {}
+            info_dict = {}
 
-        #     # Special course info: matching
-        #     matching_info = course.find("div", {"class": "matching"})
-        #     if matching_info is not None:
-        #         matching_info = matching_info.get_text()
-        #         info_dict["MATCHING"] = matching_info
+            # Special course info: matching
+            matching_info = course.find("div", {"class": "matching"})
+            if matching_info is not None:
+                matching_info = matching_info.get_text()
+                info_dict["MATCHING"] = matching_info
 
-        #     for row in course_info_rows:
-        #         try:
-        #             heading = row.find('th')
-        #             heading = heading.get_text("\n")
+            for row in course_info_rows:
+                try:
+                    heading = row.find('th')
+                    heading = heading.get_text("\n")
 
-        #             data = row.select('td')[0]
-        #             data = data.get_text("\n")
+                    data = row.select('td')[0]
+                    data = data.get_text("\n")
 
-        #             info_dict[heading] = data
-        #         except:
-        #             continue
-        #     # Course info end
+                    info_dict[heading] = data
+                except:
+                    continue
+            # Course info end
             
-        #     section_dict = {}
-        #     course_sections = course.select(".sections")[0]
-        #     course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
+            section_dict = {}
+            course_sections = course.select(".sections")[0]
+            course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
 
-        #     for idx, section in enumerate(course_sections):
-        #         # Append extra section times/instructor information to section entry (1/2)
-        #         if section['class'][0] in ["secteven", "sectodd"]:
-        #             continue
+            for idx, section in enumerate(course_sections):
+                # Append extra section times/instructor information to section entry (1/2)
+                if section['class'][0] in ["secteven", "sectodd"]:
+                    continue
 
-        #         section_data = section.select("td")
-        #         section_cols = []
-        #         for col in section_data:
-        #             section_cols.append(col.get_text("\n"))
+                section_data = section.select("td")
+                section_cols = []
+                for col in section_data:
+                    section_cols.append(col.get_text("\n"))
                 
-        #         # Append extra section times/instructor information to section entry (2/2)
-        #         # try:
-        #         #     next_section = course_sections[idx + 1]
-        #         #     if next_section['class'] in ["secteven", "sectodd"]:
-        #         #         extra_data = next_section.select("td")
+                # Append extra section times/instructor information to section entry (2/2)
+                # try:
+                #     next_section = course_sections[idx + 1]
+                #     if next_section['class'] in ["secteven", "sectodd"]:
+                #         extra_data = next_section.select("td")
 
-        #         #         for idx2, datum in enumerate(extra_data):
-        #         #             section_cols[idx2 + 1] += f"\n{datum}"
-        #         # except IndexError:
-        #         #     pass
+                #         for idx2, datum in enumerate(extra_data):
+                #             section_cols[idx2 + 1] += f"\n{datum}"
+                # except IndexError:
+                #     pass
                     
-        #         section_dict[section_cols[0]] = section_cols
+                section_dict[section_cols[0]] = section_cols
 
-        #         try:
-        #             next = 1
-        #             while course_sections[idx + next]['class'][0] in ["secteven", "sectodd"]:
-        #                 next_section = course_sections[idx + next]
-        #                 if next_section['class'][0] in ["secteven", "sectodd"]:
-        #                     extra_data = next_section.select("td")
+                try:
+                    next = 1
+                    while course_sections[idx + next]['class'][0] in ["secteven", "sectodd"]:
+                        next_section = course_sections[idx + next]
+                        if next_section['class'][0] in ["secteven", "sectodd"]:
+                            extra_data = next_section.select("td")
 
-        #                     for idx2, datum in enumerate(extra_data):
-        #                         section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n")
+                            for idx2, datum in enumerate(extra_data):
+                                section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n")
                         
-        #                 next += 1
-        #         except IndexError:
-        #             pass
+                        next += 1
+                except IndexError:
+                    pass
             
-        #     # Add data to dictionary for course
-        #     course_dict['title'] = course_title
-        #     course_dict['sections'] = section_dict
-        #     course_dict['info'] = info_dict
+            # Add data to dictionary for course
+            course_dict['title'] = course_title
+            course_dict['sections'] = section_dict
+            course_dict['info'] = info_dict
 
-        #     quotas[course_code] = course_dict
+            quotas[course_code] = course_dict
     
     quotas['time'] = update_time()
     
