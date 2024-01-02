@@ -105,6 +105,7 @@ async def on_guild_join(guild):
 # Text commands start
 # "sync" command
 # Syncs command tree with Discord
+@commands.guild_only()
 @bot.command()
 async def sync(ctx):
     if ctx.author.id == admin_id:  # Owner's ID
