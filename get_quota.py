@@ -27,7 +27,7 @@ os.chdir(dname)
 # Winter: 20
 # Spring: 30
 # Summer: 40
-semester_code = 2320  # 23-24 Winter
+semester_code = 2330  # 23-24 Spring
 
 # Dict mapping semester name to code
 sem_dict = {
