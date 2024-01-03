@@ -1,4 +1,3 @@
-# v2.6
 # bot.py
 import discord
 from discord import app_commands

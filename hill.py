@@ -75,6 +75,8 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page - 1, self.semester)
         elif self.mode == "l":
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page - 1, self.semester)
+        elif self.mode == "a":
+            embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page - 1)
         # No pages for info command
         # elif self.mode == "i":
         #     button.disabled = True
@@ -97,6 +99,8 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page + 1, self.semester)
         elif self.mode == "l":
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page + 1, self.semester)
+        elif self.mode == "a":
+            embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page + 1)
         # No pages for info command
         # elif self.mode == "i":
         #     button.disabled = True
@@ -429,6 +433,21 @@ bot.tree.add_command(subscribe_group)
 
 # "sub" command group end
 
+# "about" command
+# Show info about the bot
+@bot.tree.command(description="Show info about the bot!")
+async def about(interaction: discord.Interaction) -> None:
+    await interaction.response.defer(thinking=True)
+
+    guild_count = len(bot.guilds)
+    embed_about = get_quota.compose_about(guild_count)
+
+    try:
+        view = QuotaPage(mode="a")
+        await interaction.edit_original_response(embed=embed_about, view=view)
+    except:
+        await interaction.edit_original_response(content="⚠️ Error displaying about page!")
+    
 # Autocomplete for "quota", "info", "sections", "sub sub" command
 @quota.autocomplete('course_code')
 @info.autocomplete('course_code')

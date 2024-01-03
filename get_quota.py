@@ -15,6 +15,9 @@ import urllib
 import config
 import subject_channels
 
+# Bots version
+bot_version = 2.6
+
 # Change working directory to wherever this is in
 abspath = os.path.abspath(__file__)
 dname = os.path.dirname(abspath)
@@ -36,6 +39,13 @@ sem_dict = {
         "Spring": 30,
         "Summer": 40
     }
+
+sem_emoji_dict = {
+    10: "🍂",
+    20: "⛄",
+    30: "🌿",
+    40: "🌊"
+}
 
 # Convert semester string (name) to code
 def semester_string_to_code(semester_string, check=True):
@@ -60,6 +70,15 @@ def semester_code_to_string(semester: int):
 
     try:
         return f"20{year}-{year + 1} {list(sem_dict.keys())[sem_idx]}"
+    except Exception as e:
+        return e
+
+# Convert semester code to emoji
+def semester_code_to_emoji(semester: int):
+    sem_idx = int(semester % 100)
+
+    try:
+        return sem_emoji_dict[sem_idx]
     except Exception as e:
         return e
 
@@ -814,6 +833,98 @@ def compose_list(prefix, page=0, semester=""):
     embed_list.set_author(name=list_header)
 
     return embed_list
+
+# Functions and variables for "about" command start
+command_list = [
+    ("/quota <course_code>", "Get quotas of a course!"),
+    ("/sections <course_code>", "Get sections of a course!"),
+    ("/info <course_code>", "Get the information about a course!"),
+    ("/search (<prefix>|<common_core_area>|<instructor>)", "Search courses by the given query!"),
+    ("/history (quota|sections|info) <course_code>", "Get quotas/sections/information of a course offering in a previous semester!"),
+    ("/history search (<prefix>|<common_core_area>|<instructor>)", "Search courses in a previous semester!"),
+    ("/sub sub", "Subscribe to a course! You'll be notified of its changes via DM."),
+    ("/sub unsub", "Unsubscribe from a course!"),
+    ("/sub show", "Show all courses you're subscribed to!"),
+    ("/about", "Show info about the bot!")
+]
+
+# Compose about message
+def compose_about(guild_count, page=0):
+    page_size = 5
+    max_page = find_max_page(dict.fromkeys(command_list), page_size) + 1
+
+    # Check if page number is valid
+    if page < 0:
+        return "p0"
+    elif page > max_page:
+        return "pmax"
+    
+    # Cut out one page of data
+    try:
+        commands_paged = command_list[page_size * (page - 1): page_size * page]
+    except IndexError:
+        commands_paged = command_list[page_size * (page - 1): ]
+
+    # Stats for display
+    current_semester = (f"{semester_code_to_emoji(int(semester_code))} {semester_code_to_string(semester_code)}", len(get_course_list()))
+    semester_list = find_historical_data()
+    semester_list = [
+        (
+            f"{semester_code_to_emoji(int(s))} {semester_code_to_string(int(s))}", len(get_course_list(s))
+        )
+        for s in semester_list
+    ]
+
+    semesters_field = ""
+    for k, v in semester_list:
+        semesters_field += f"{k} ({v} courses)\n"
+    
+    # Base components of the embed
+    about_titles = ["Info and Stats", "Commands Usage"]  # Page 1, all other pages
+    about_descs = [
+        "HKUST Class Schedule & Quota, right here on Discord!\nLook up and subscribe to courses with my commands!\nRead on to learn how to use them.", 
+        ""
+    ]
+    embed_about = discord.Embed(
+        title=about_titles[bool(page)],
+        description=about_descs[bool(page)],
+        color=config.color_info
+    )
+    embed_about.set_author(name="🍊 About Hill!")
+    embed_about.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}")
+
+    # Page 1 components
+    if page == 0:
+        embed_about.add_field(
+            name="🍊 Version",
+            value=f"```\n{bot_version}\n```",
+            inline=False
+        )
+        embed_about.add_field(
+            name="🍊 Servers",
+            value=f"```\n{guild_count}\n```",
+            inline=False
+        )
+        embed_about.add_field(
+            name="🍊 Current Semester",
+            value=f"```\n{current_semester[0]} ({current_semester[1]} courses)\n```"
+        )
+        embed_about.add_field(
+            name=f"🍊 Historical Semesters ({len(semester_list)})",
+            value=f"```\n{semesters_field}\n```",
+            inline=False
+        )
+    else:
+        for command in commands_paged:
+            embed_about.add_field(
+                name=f"🍊 `{command[0]}`",
+                value=command[1],
+                inline=False
+            )
+    
+    return embed_about
+
+# Functions and variables for "about" command end
 
 # Display user's subscriptions for "sub" group commands
 def display_subscriptions(id):
