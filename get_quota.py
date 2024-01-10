@@ -421,8 +421,8 @@ def format_section(section):
     # Make all strings single-line
     time_list = [t.replace('\n', ', ') for t in time_list]
     venue_list = [t.replace('\n', ', ') for t in venue_list]
-    instructor_list = [t.replace('\n', ', ') for t in instructor_list]
-    ta_list = [t.replace('\n', ', ') for t in ta_list]
+    instructor_list = [t.replace('\n', '\n        ') for t in instructor_list]
+    ta_list = [t.replace('\n', '\n        ') for t in ta_list]
 
     # Add strings to field
     # Add strings row by row
