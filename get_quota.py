@@ -655,7 +655,7 @@ def compose_info(course_code, semester=""):
         if key == "MATCHING":
             continue
 
-        key = key.capitalize()
+        key = key.title()
         key = key.replace("\n", " ")
 
         # Split info into multiple fields
@@ -1312,9 +1312,9 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     # Split info into multiple fields
                     for v_chunk in range(int(len(v) / 1014) + 1):  # Leave room for MD codeblock characters
                         if v_chunk == 0:
-                            k_name = "🥥 New: " + k.replace("\n", " ").capitalize()
+                            k_name = "🥥 New: " + k.replace("\n", " ").title()
                         else:
-                            k_name = k.replace("\n", " ").capitalize() + " (cont.)"
+                            k_name = k.replace("\n", " ").title() + " (cont.)"
                         
                         try:
                             embed_course_info_change.add_field(
@@ -1347,7 +1347,7 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                             piece_k_name = ""
                             # "Heading": Display part of course info changed
                             if piece_k == "⬅️ Old" and v_chunk == 0:
-                                piece_k_name = "🥥 Changed: " + k.replace("\n", " ").capitalize() + "\n"
+                                piece_k_name = "🥥 Changed: " + k.replace("\n", " ").title() + "\n"
                             piece_k_name += piece_k
                             if v_chunk > 0:
                                 piece_k_name += " (cont.)"
@@ -1389,9 +1389,9 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
                     # Split info into multiple fields
                     for v_chunk in range(int(len(v) / 1014) + 1):  # Leave room for MD codeblock characters
                         if v_chunk == 0:
-                            k_name = "🥥 Removed: " + k.replace("\n", " ").capitalize()
+                            k_name = "🥥 Removed: " + k.replace("\n", " ").title()
                         else:
-                            k_name = k.replace("\n", " ") + " (cont.)"
+                            k_name = k.replace("\n", " ").title() + " (cont.)"
                         
                         try:
                             embed_course_info_change.add_field(
@@ -2101,7 +2101,7 @@ async def download_quotas(bot, current_loop):
             for row in course_info_rows:
                 try:
                     heading = row.find('th')
-                    heading = heading.get_text("\n")
+                    heading = heading.get_text(" ")
 
                     data = row.select('td')[0]
                     data = data.get_text("\n")
