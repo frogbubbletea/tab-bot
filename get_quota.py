@@ -2111,6 +2111,8 @@ async def download_quotas(bot, current_loop):
                     continue
             # Course info end
             
+            # Sections (code, schedule, venue, instructor, TA, quota, remarks) start
+
             section_dict = {}
             course_sections = course.select(".sections")[0]
             course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
@@ -2123,7 +2125,10 @@ async def download_quotas(bot, current_loop):
                 section_data = section.select("td")
                 section_cols = []
                 for col in section_data:
-                    section_cols.append(col.get_text("\n"))
+                    section_cols.append(
+                        col.get_text("\n")
+                        .replace("\n>> Show more", "")  # Exclude "show more" button from the website (1/2)
+                    )
                 
                 # Append extra section times/instructor information to section entry (2/2)
                 # try:
@@ -2146,12 +2151,14 @@ async def download_quotas(bot, current_loop):
                             extra_data = next_section.select("td")
 
                             for idx2, datum in enumerate(extra_data):
-                                section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n")
+                                section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n").replace("\n>> Show more", "")  # Exclude "show more" button from the website (2/2)
                         
                         next += 1
                 except IndexError:
                     pass
             
+            # Sections (code, schedule, venue, instructor, TA, quota, remarks) end
+
             # Add data to dictionary for course
             course_dict['title'] = course_title
             course_dict['sections'] = section_dict
