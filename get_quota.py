@@ -1260,6 +1260,40 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
 
         else:
             # 🥥 Course info changed!
+            # Initialize course titles
+            title_old = old_quotas[key]['title']
+            title_new = new_quotas[key]['title']
+
+            # Send message for course title change
+            if title_old != title_new:
+                embed_course_info_change = discord.Embed(
+                    title=f"{value.get('title', 'Error')}",
+                    color=0xcad3f5  # Text
+                )
+                embed_course_info_change.set_author(name="🥥 Course info changed!")
+
+                embed_course_info_change.add_field(
+                    name="🥥 Changed: Title\n⬅️ Old",
+                    value=f"```\n{title_old}\n```",
+                    inline=False
+                )
+
+                embed_course_info_change.add_field(
+                    name="➡️ New",
+                    value=f"```\n{title_new}\n```",
+                    inline=False
+                )
+
+                # Send the message
+                # Wrapped to handle API issues
+                try:
+                    await channels.get(key[0: 4], channels['other']).send(embed=embed_course_info_change, view=view_new)
+                    await send_to_subscribers(bot, key, embed_course_info_change, view_new)
+                except:  # Stop bot from freaking out over oversized embed (unlikely)
+                    pass
+
+                changed = True
+
             # Initialize dicts of course info
             info_compare_old = old_quotas[key]['info']
             info_compare_new = new_quotas[key]['info']
