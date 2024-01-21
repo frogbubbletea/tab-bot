@@ -207,6 +207,30 @@ def get_prefix_list(semester=""):
 
     return prefix_list
 
+# Get all courses offered in all recorded semesters
+def get_combined_course_dict():
+    # Get courses offered in previous semesters
+    # Combine course data of all semesters
+    # For courses with multiple recorded offerings, use the latest offering
+    semester_list = sorted(find_historical_data())
+    big_course_dict = {}
+    for sem in semester_list:
+        sem_quotas = open_quotas(sem)
+        if not check_quotas_validity(sem):
+            continue
+        big_course_dict.update(sem_quotas)
+    
+    # Get courses of current semester
+    current_quotas = open_quotas()
+    if not check_quotas_validity():
+        pass
+    else:
+        big_course_dict.update(current_quotas)
+
+    big_course_dict.pop('time')
+
+    return big_course_dict
+
 # Get list of all instances of a section attribute
 def get_attribute_list(attribute: int, semester=""):
     # Check if quotas file is available
@@ -234,7 +258,25 @@ def get_attributes_from_course(attribute: int, course: dict):
     attributes = [a for a in attributes if a != ""]  # Remove empty elements
 
     return attributes
-    
+
+# Get list of courses that requires a course
+# course_code: no spaces
+# mode: "p" for pre-reqs, "e" for exclusions
+def get_required_by_courses(course_code: str, mode: str):
+    # Add space to course code between prefix and number to follow original display format
+    course_code = course_code[0 : 4] + " " + course_code[4 : ]
+
+    # Get all courses offered in all recorded semesters
+    big_course_dict = get_combined_course_dict()
+
+    # Select between pre-reqs and exclusions
+    mode_dict = {"p": "PRE-REQUISITE", "e": "EXCLUSION"}
+
+    # Filter the courses by requirement: only keep course codes
+    filtered_courses = ", ".join([(k[0: 4] + " " + k[4: ]) for k, v in big_course_dict.items() if (course_code in v['info'].get(mode_dict[mode], ""))])
+
+    return filtered_courses
+
 # Get list of all common core areas
 def get_cc_areas(semester=""):
     quotas = open_quotas(semester)
@@ -624,7 +666,7 @@ def compose_message(course_code, page=0, semester=""):
 
 # Compose message of course info for "info" command
 # `semester`: semester code
-def compose_info(course_code, semester=""):
+def compose_info(course_code, page=0, semester=""):
     quotas = open_quotas(semester)
 
     # Check if quotas file is available
@@ -640,6 +682,21 @@ def compose_info(course_code, semester=""):
         if course_code == "time":
             return "key"
     
+    # Get courses that requires/excludes this course
+    requisite_exclusion_dict = {
+        "p": get_required_by_courses(course_code, "p"),
+        "e": get_required_by_courses(course_code, "e")
+    }
+
+    # Separate required by and excluded by courses list to separate page
+    max_page = 1
+
+    # Check if page number is valid
+    if page < 0:
+        return "p0"
+    elif page > max_page:
+        return "pmax"
+
     # Use alternate color and heading for historical data embeds
     info_color = config.color_success if semester == "" else config.color_history
     info_heading = "🍊 Information about"
@@ -650,27 +707,55 @@ def compose_info(course_code, semester=""):
                                color=info_color,
                                timestamp=time_from_stamp(quotas['time']))  # Quota update time
     
-    for key, value in course_dict['info'].items():
-        # Skip section matching message
-        if key == "MATCHING":
-            continue
+    if page == 0:
+        # Get course info
+        for key, value in course_dict['info'].items():
+            # Skip section matching message
+            if key == "MATCHING":
+                continue
 
-        key = key.title()
-        key = key.replace("\n", " ")
+            key = key.title()
+            key = key.replace("\n", " ")
 
-        # Split info into multiple fields
-        for chunk in range(int(len(value) / 1024) + 1):
-            if chunk == 0:
-                field_title = f"🍊 {key}"
-            else:
-                field_title = f"🍊 {key} (cont.)"
+            # Split info into multiple fields
+            for chunk in range(int(len(value) / 1024) + 1):
+                if chunk == 0:
+                    field_title = f"🍊 {key}"
+                else:
+                    field_title = f"🍊 {key} (cont.)"
 
-            try:
-                embed_info.add_field(name=field_title, value=value[1024 * chunk: 1024 * (chunk + 1)], inline=False)
-            except IndexError:
-                embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
+                try:
+                    embed_info.add_field(name=field_title, value=value[1024 * chunk: 1024 * (chunk + 1)], inline=False)
+                except IndexError:
+                    embed_info.add_field(name=field_title, value=value[1024 * chunk: ], inline=False)
+    else:
+        # Get courses that requires/excludes this course
+        for mode in ["p", "e"]:
+            requisite_exclusion_courses = get_required_by_courses(course_code, mode)
 
-    embed_info.set_footer(text=f"🕒 Last updated")
+            # Don't add field if the string is empty
+            if requisite_exclusion_courses == "":
+                continue
+
+            mode_dict = {"p": "Required by", "e": "Excluded by"}
+
+            # Split info into multiple fields
+            for chunk in range(int(len(requisite_exclusion_courses) / 1024) + 1):
+                if chunk == 0:
+                    field_title = f"🍊 {mode_dict[mode]}"
+                else:
+                    field_title = f"🍊 {mode_dict[mode]} (cont.)"
+
+                try:
+                    embed_info.add_field(name=field_title, value=requisite_exclusion_courses[1024 * chunk: 1024 * (chunk + 1)], inline=False)
+                except IndexError:
+                    embed_info.add_field(name=field_title, value=requisite_exclusion_courses[1024 * chunk: ], inline=False)
+
+    info_footer = ""
+    if requisite_exclusion_dict['p'] + requisite_exclusion_dict['e']:
+        info_footer += f"📄 Page {page + 1} of {max_page + 1}"
+    info_footer += "\n🕒 Last updated"
+    embed_info.set_footer(text=info_footer)
     embed_info.set_author(name=info_heading)
 
     return embed_info
@@ -1071,7 +1156,7 @@ def compose_new_sub_confirmation(mode):
             "Your subscription is pending! Please wait for verification.",  # Embed title
             "To conserve resources, we need to make sure you can actually receive Tab's notifications before you can subscribe. Normally you'll only need to verify once!",  # Embed description
             config.color_info,  # Embed color
-            "🎏 Howdy new subscriber!",  # Author
+            "🎏 New subscriber message",  # Author
             "🎏 How to verify?",  # Field 1 name
             "Tab will send you a confirmation DM within 5 minutes. Once you receive it, you're verified and can subscribe freely! Your current subscriptions will also be saved. This process is automatic and no action is needed!",  # Field 1 value
             "🎏 What to do if I didn't receive the DM?",  # Field 2 name

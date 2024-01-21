@@ -73,13 +73,12 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page - 1, self.semester)
         elif self.mode == "s":
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page - 1, self.semester)
+        elif self.mode == "i":
+            embed_quota_pageflip = get_quota.compose_info(self.course_code, self.page - 1, self.semester)
         elif self.mode == "l":
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page - 1, self.semester)
         elif self.mode == "a":
             embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page - 1)
-        # No pages for info command
-        # elif self.mode == "i":
-        #     button.disabled = True
 
         if embed_quota_pageflip == "p0":
             await interaction.response.send_message("🚫 You're already at the first page!", ephemeral=True)
@@ -97,13 +96,12 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_message(self.course_code, self.page + 1, self.semester)
         elif self.mode == "s":
             embed_quota_pageflip = get_quota.compose_sections(self.course_code, self.page + 1, self.semester)
+        elif self.mode == "i":
+            embed_quota_pageflip = get_quota.compose_info(self.course_code, self.page + 1, self.semester)
         elif self.mode == "l":
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page + 1, self.semester)
         elif self.mode == "a":
             embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page + 1)
-        # No pages for info command
-        # elif self.mode == "i":
-        #     button.disabled = True
 
         if embed_quota_pageflip == "pmax":
             await interaction.response.send_message("🚫 You're already at the last page!", ephemeral=True)
@@ -160,7 +158,9 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
     else:
         try:
             view = QuotaPage(mode="i", course_code=course_code)
-            view.clear_items()
+            # Clear page buttons if no course requires/excludes it
+            if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
+                view.clear_items()
             # Add source and reviews button
             get_quota.add_source_url(view, course_code)
             get_quota.add_space_url(view, course_code)
@@ -312,7 +312,9 @@ async def history_info(interaction: discord.Interaction, course_code: str, semes
     else:
         try:
             view = QuotaPage(mode="i", course_code=course_code, semester=semester)
-            view.clear_items()
+            # Clear page buttons if no course requires/excludes it
+            if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
+                view.clear_items()
             # Add reviews button
             get_quota.add_space_url(view, course_code)
 
