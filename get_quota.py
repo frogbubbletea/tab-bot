@@ -16,7 +16,7 @@ import config
 import subject_channels
 
 # Bots version
-bot_version = 2.8
+bot_version = 2.9
 
 # Change working directory to wherever this is in
 abspath = os.path.abspath(__file__)
