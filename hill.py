@@ -9,6 +9,7 @@ import typing
 import re
 
 import get_quota
+import plot_quota
 import config
 
 # Uncomment when running on Windows
@@ -222,6 +223,22 @@ async def search(interaction: discord.Interaction, query: str) -> None:
         elif query not in cc_areas + instructors:
             get_quota.add_source_url(view, query, "l")
         await interaction.edit_original_response(embed=embed_list, view=view)
+
+# "graph" command
+# Plot the enrollment statistics of a section over time
+@bot.tree.command(description="Plot the enrollment statistics of a section over time!")
+async def graph(interaction: discord.Interaction, course_code: str, section: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    course_code = course_code.replace(" ", "").upper()
+    embed_plot, section_plot_image_file = plot_quota.compose_embed_with_plot(course_code, section)
+
+    view = QuotaPage(mode="p", course_code=course_code)
+    view.clear_items()
+    # Add source button
+    get_quota.add_source_url(view, course_code)
+    
+    await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
 
 # "history" command group start
 history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
