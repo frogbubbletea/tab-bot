@@ -273,7 +273,8 @@ def get_required_by_courses(course_code: str, mode: str):
     mode_dict = {"p": "PRE-REQUISITE", "e": "EXCLUSION"}
 
     # Filter the courses by requirement: only keep course codes
-    filtered_courses = ", ".join([(k[0: 4] + " " + k[4: ]) for k, v in big_course_dict.items() if (course_code in v['info'].get(mode_dict[mode], ""))])
+    course_code_filter = re.compile(fr"\b{course_code}\b")  # Eliminate false positives e.g. COMP 2012 and COMP2012H
+    filtered_courses = ", ".join([(k[0: 4] + " " + k[4: ]) for k, v in big_course_dict.items() if (re.search(course_code_filter, v['info'].get(mode_dict[mode], "")) is not None)])
 
     return filtered_courses
 
