@@ -467,10 +467,11 @@ async def about(interaction: discord.Interaction) -> None:
     except:
         await interaction.edit_original_response(content="⚠️ Error displaying about page!")
     
-# Autocomplete for "quota", "info", "sections", "sub sub" command
+# Autocomplete for "quota", "info", "sections", "graph", "sub sub" command
 @quota.autocomplete('course_code')
 @info.autocomplete('course_code')
 @sections.autocomplete('course_code')
+@graph.autocomplete('course_code')
 @sub.autocomplete('course_code')
 async def sections_autocomplete(
     interaction: discord.Interaction,
