@@ -84,17 +84,19 @@ async def update_quotas():
         trend_snapshot_result = await loop.run_in_executor(None, get_quota.create_trend_snapshot)
 
         # Record end time of operation
+        # Display error message if quotas file is corrupt
+        trend_update_confirm_fail = "finished" if trend_snapshot_result else "failed"
         trend_update_end_time = get_quota.update_time()
-        print(f"Trend update finished: {trend_update_end_time}")
+        print(f"Trend update {trend_update_confirm_fail}: {trend_update_end_time}")
 
-        # Send trend update confirmation message to quota-updates channel
+        # Send trend update confirmation/error message to quota-updates channel
         trend_start_d = get_quota.disc_time(trend_start_time, "d")  # Date in mm/dd/yyyy
         trend_start_T = get_quota.disc_time(trend_start_time, "T")  # Time (12h) in h:mm:ss
         trend_update_end_d = get_quota.disc_time(trend_update_end_time, "d")
         trend_update_end_T = get_quota.disc_time(trend_update_end_time, "T")
 
         try:
-            await update_channel.send(f"📈 Trend updated! {trend_start_d} {trend_start_T} - {trend_update_end_d} {trend_update_end_T}: {update_quotas.current_loop}")
+            await update_channel.send(f"📈 Trend update {trend_update_confirm_fail}! {trend_start_d} {trend_start_T} - {trend_update_end_d} {trend_update_end_T}: {update_quotas.current_loop}")
         except:
             return
 
