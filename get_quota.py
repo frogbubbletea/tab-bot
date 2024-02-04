@@ -11,6 +11,7 @@ import re
 import traceback
 import itertools
 import urllib
+import pymongo
 
 import config
 import subject_channels
@@ -46,6 +47,112 @@ sem_emoji_dict = {
     30: "🌿",
     40: "🌊"
 }
+
+"""
+Each semester a database, each course a collection
+
+Course section snapshot schema:
+{
+    section_code
+    time
+    loop
+    total: [quota, enrol, avail, wait]
+    reserved: [[dept, quota, enrol, avail]]
+}
+
+Last update time schema:
+{
+    last_update_time
+    last_update_loop
+}
+"""
+
+# Update interval in seconds
+trend_snapshot_interval = 900
+
+# Prepare enrollment stats database
+trend_client = pymongo.MongoClient("mongodb://localhost:27017/")
+trend_db = trend_client[f"tabtrend{semester_code}"]  # Each semester a database
+
+# Check if last_update_time exists in current semester's database
+# If no, the database is empty
+# Create last_update_time collection with last_update_time and last_update_loop document
+# Document has value 0 to trigger an update immediately
+def get_trend_update_time(loop=False):
+    update_time_target = "last_update_loop" if loop else "last_update_time"
+
+    update_time_col = trend_db["last_update_time"]
+    time_query = { "last_update_time": {"$exists": "true"} }
+    last_update_time = update_time_col.find_one(time_query)
+
+    if last_update_time:
+        return last_update_time[update_time_target]
+    else:
+        update_time_col.insert_one(
+            { 
+                "last_update_time": 0, 
+                "last_update_loop": 0 
+            }
+        )
+        return update_time_col.find_one(time_query)[update_time_target]  # Raise error if database is still empty
+
+# Create a snapshot of all sections
+def create_trend_snapshot():
+    quotas = open_quotas()
+    if not check_quotas_validity():
+        return False
+    
+    this_update_loop = get_trend_update_time(True) + 1
+
+    for course_code, course_data in quotas.items():
+        # Skip time entry
+        if course_code == "time":
+            continue
+
+        for section_code, section_data in course_data['sections'].items():
+            # Check for reserved quotas
+            reserved_quotas_list = []
+            total_quota = section_data[5].split("\n")
+            if len(total_quota) >= 3:
+                for k in range(2, len(total_quota)):
+                    reserved_quotas = total_quota[k].split(": ")
+                    reserved_quotas_dept = [reserved_quotas[0]]
+                    reserved_quotas_qea = reserved_quotas[1].split("/")
+                    reserved_quotas_list.append(reserved_quotas_dept + reserved_quotas_qea)
+
+            # Create snapshot of the section
+            section_snapshot = {
+                "section_code": trim_section(section_code),
+                "time": quotas['time'],
+                "loop": this_update_loop,
+                "total": [int(section_data[i].split("\n")[0]) for i in range(5, 9)],
+                "reserved": reserved_quotas_list
+            }
+
+            # Insert the snapshot into the collection of the course
+            trend_course_col = trend_db[course_code]
+
+            # Compare current snapshot with latest stored version
+            latest_snapshot_query = { 
+                'section_code': section_snapshot['section_code'],
+                'total': section_snapshot['total'],
+                'reserved': section_snapshot['reserved']
+            }
+            latest_stored_snapshot = trend_course_col.find_one(
+                latest_snapshot_query,
+                sort=[('time', -1)]
+            )
+
+            # Only insert snapshot if difference is found or no previous snapshot is stored
+            if (not latest_stored_snapshot):
+                snapshot_insert_result = trend_course_col.insert_one(section_snapshot)
+
+    # Change last updated time of database
+    update_time_col = trend_db["last_update_time"]
+    time_query = { "last_update_time": {"$exists": "true"} }
+    new_update_time = { "$set": { "last_update_time": quotas['time'], "last_update_loop": this_update_loop } }
+    update_time_col.update_one(time_query, new_update_time)
+    return True
 
 # Convert semester string (name) to code
 def semester_string_to_code(semester_string, check=True):
