@@ -120,7 +120,7 @@ def create_trend_snapshot():
                 for k in range(2, len(total_quota)):
                     reserved_quotas = total_quota[k].split(": ")
                     reserved_quotas_dept = [reserved_quotas[0]]
-                    reserved_quotas_qea = reserved_quotas[1].split("/")
+                    reserved_quotas_qea = [int(i) for i in reserved_quotas[1].split("/")]
                     reserved_quotas_list.append(reserved_quotas_dept + reserved_quotas_qea)
 
             # Create snapshot of the section
