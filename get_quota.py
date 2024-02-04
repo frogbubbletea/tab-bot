@@ -33,6 +33,9 @@ os.chdir(dname)
 # Summer: 40
 semester_code = 2330  # 23-24 Spring
 
+# Timezone of HKUST
+hkust_time_zone = "Asia/Hong_Kong"
+
 # Dict mapping semester name to code
 sem_dict = {
         "Fall": 10,

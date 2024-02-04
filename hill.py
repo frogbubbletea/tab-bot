@@ -231,14 +231,24 @@ async def graph(interaction: discord.Interaction, course_code: str, section: str
     await interaction.response.defer(thinking=True)
 
     course_code = course_code.replace(" ", "").upper()
+    section = section.replace(" ", "").upper()
     embed_plot, section_plot_image_file = plot_quota.compose_embed_with_plot(course_code, section)
 
-    view = QuotaPage(mode="p", course_code=course_code)
-    view.clear_items()
-    # Add source button
-    get_quota.add_source_url(view, course_code)
-    
-    await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
+    # Error: Course data unavailable
+    if embed_plot == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: invalid course code
+    elif embed_plot == "course_code":
+        await interaction.edit_original_response(content="⚠️ Check your course code!")
+    # Error: invalid section code
+    elif embed_plot == "section_code":
+        await interaction.edit_original_response(content="⚠️ Check your section code!")
+    else:
+        view = QuotaPage(mode="p", course_code=course_code)
+        view.clear_items()
+        # Add source button
+        get_quota.add_source_url(view, course_code)
+        await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
 
 # "history" command group start
 history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
