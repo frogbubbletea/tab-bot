@@ -53,6 +53,7 @@ def compose_plot(course_code: str, section: str, page=0):
                 i,
                 {
                     "section_code": section,
+                    "class_nbr": section_snapshots[i]["class_nbr"],
                     "time": section_snapshots[i]["time"] - get_quota.trend_snapshot_interval,
                     "loop": section_snapshots[i]["loop"] - 1,
                     "total": section_snapshots[i - 1]["total"],  # Should have the same quotas as the last snapshot before recorded change
@@ -65,6 +66,7 @@ def compose_plot(course_code: str, section: str, page=0):
         section_snapshots.append(
             {
                 "section_code": section,
+                "class_nbr": section_snapshots[-1]["class_nbr"],
                 "time": get_quota.get_trend_update_time(),
                 "loop": get_quota.get_trend_update_time(True),
                 "total": section_snapshots[-1]["total"],  # Should have the same quotas as the last snapshot before recorded change

@@ -56,17 +56,18 @@ Each semester a database, each course a collection
 
 Course section snapshot schema:
 {
-    section_code
-    time
-    loop
-    total: [quota, enrol, avail, wait]
-    reserved: [[dept, quota, enrol, avail]]
+    section_code: str
+    class_nbr: int
+    time: int
+    loop: int
+    total: [quota: int, enrol: int, avail: int, wait: int]
+    reserved: [[dept: str, quota: int, enrol: int, avail: int]]
 }
 
 Last update time schema:
 {
-    last_update_time
-    last_update_loop
+    last_update_time: int
+    last_update_loop: int
 }
 """
 
@@ -126,6 +127,7 @@ def create_trend_snapshot():
             # Create snapshot of the section
             section_snapshot = {
                 "section_code": trim_section(section_code),
+                "class_nbr": trim_class_nbr(section_code),
                 "time": quotas['time'],
                 "loop": this_update_loop,
                 "total": [int(section_data[i].split("\n")[0]) for i in range(5, 9)],
@@ -195,6 +197,12 @@ def semester_code_to_emoji(semester: int):
 def trim_section(section_code):
     section_trim = re.findall("[A-Z]+[0-9]*[A-Z]*", section_code)[0]
     return section_trim
+
+# Get class number from section code
+# returns an integer
+def trim_class_nbr(section_code):
+    class_nbr = section_code[section_code.find("(") + 1: section_code.find(")")]
+    return int(class_nbr)
 
 # Store current time (UTC) as last updated time when quota update is finished
 def update_time():
