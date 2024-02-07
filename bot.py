@@ -72,33 +72,33 @@ async def update_quotas():
     # Confirm new subscribers and unsubscribe unreachable users
     await get_quota.check_on_everyone(bot)
 
-    # Update trend database if needed (last update was longer than trend_snapshot_interval)
-    trend_update_time = get_quota.get_trend_update_time()
-    if update_time - trend_update_time >= get_quota.trend_snapshot_interval - 10:
-        # Record start time of operation
-        trend_start_time = get_quota.update_time()
-        print(f"Trend update started: {trend_start_time}")
+    # Update trend database if needed (last update was longer than trend_snapshot_interval)  (hidden until hardware incompatibility resolved! 1/1)
+    # trend_update_time = get_quota.get_trend_update_time()
+    # if update_time - trend_update_time >= get_quota.trend_snapshot_interval - 10:
+    #     # Record start time of operation
+    #     trend_start_time = get_quota.update_time()
+    #     print(f"Trend update started: {trend_start_time}")
 
-        # Run snapshot operation in executor because it takes very long
-        loop = asyncio.get_running_loop()
-        trend_snapshot_result = await loop.run_in_executor(None, get_quota.create_trend_snapshot)
+    #     # Run snapshot operation in executor because it takes very long
+    #     loop = asyncio.get_running_loop()
+    #     trend_snapshot_result = await loop.run_in_executor(None, get_quota.create_trend_snapshot)
 
-        # Record end time of operation
-        # Display error message if quotas file is corrupt
-        trend_update_confirm_fail = "finished" if trend_snapshot_result else "failed"
-        trend_update_end_time = get_quota.update_time()
-        print(f"Trend update {trend_update_confirm_fail}: {trend_update_end_time}")
+    #     # Record end time of operation
+    #     # Display error message if quotas file is corrupt
+    #     trend_update_confirm_fail = "finished" if trend_snapshot_result else "failed"
+    #     trend_update_end_time = get_quota.update_time()
+    #     print(f"Trend update {trend_update_confirm_fail}: {trend_update_end_time}")
 
-        # Send trend update confirmation/error message to quota-updates channel
-        trend_start_d = get_quota.disc_time(trend_start_time, "d")  # Date in mm/dd/yyyy
-        trend_start_T = get_quota.disc_time(trend_start_time, "T")  # Time (12h) in h:mm:ss
-        trend_update_end_d = get_quota.disc_time(trend_update_end_time, "d")
-        trend_update_end_T = get_quota.disc_time(trend_update_end_time, "T")
+    #     # Send trend update confirmation/error message to quota-updates channel
+    #     trend_start_d = get_quota.disc_time(trend_start_time, "d")  # Date in mm/dd/yyyy
+    #     trend_start_T = get_quota.disc_time(trend_start_time, "T")  # Time (12h) in h:mm:ss
+    #     trend_update_end_d = get_quota.disc_time(trend_update_end_time, "d")
+    #     trend_update_end_T = get_quota.disc_time(trend_update_end_time, "T")
 
-        try:
-            await update_channel.send(f"📈 Trend update {trend_update_confirm_fail}! {trend_start_d} {trend_start_T} - {trend_update_end_d} {trend_update_end_T}: {update_quotas.current_loop}")
-        except:
-            return
+    #     try:
+    #         await update_channel.send(f"📈 Trend update {trend_update_confirm_fail}! {trend_start_d} {trend_start_T} - {trend_update_end_d} {trend_update_end_T}: {update_quotas.current_loop}")
+    #     except:
+    #         return
 
     # # Start checking diffs after first loop run
     # if update_quotas.current_loop > 0:
