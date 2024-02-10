@@ -621,6 +621,9 @@ async def debug(interaction: discord.Interaction, file: str) -> None:
     
     # Send quotas file scraped by the bot
     else:
+        # Send trends file
+        if file == "tabtrend":
+            file = f"{file}{get_quota.semester_code}"
         await interaction.edit_original_response(content=f"🎏 Quotas file: `{file}.json`")
         await interaction.channel.send(file=discord.File(f"{file}.json"))
 
@@ -629,7 +632,7 @@ async def debug_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
-    file_list = ['quotas', 'quotas_old', 'subscribers', 'guild_list']
+    file_list = ['quotas', 'quotas_old', 'subscribers', 'guild_list', 'tabtrend']
     file_list = [app_commands.Choice(name=file, value=file) for file in file_list if current.upper() in file.upper()]
     return file_list
 
