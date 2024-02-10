@@ -1,4 +1,5 @@
-import pymongo
+# import pymongo
+from tinydb import TinyDB, Query
 import discord
 
 import io
@@ -42,9 +43,11 @@ def compose_plot(course_code: str, section: str, page=0):
     # return fig
 
     # Find all snapshots of specified section
-    course_col = get_quota.trend_db[course_code]
+    # course_col = get_quota.trend_db[course_code]
+    course_col = get_quota.trend_db.table(course_code, cache_size=0)
     section_query = { "section_code": section }
-    section_snapshots = list(course_col.find(section_query, sort=[('time', 1)]))
+    # section_snapshots = list(course_col.find(section_query, sort=[('time', 1)]))
+    section_snapshots = sorted(course_col.search(Query().fragment(section_query)), key=lambda k: k['time'])
 
     # Add intermediate data points at 1 interval before recorded change if needed
     for i in range(1, len(section_snapshots)):

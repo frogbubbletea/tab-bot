@@ -12,6 +12,7 @@ import traceback
 import itertools
 import urllib
 # import pymongo  # hidden until hardware incompatibility resolved! 1/2
+from tinydb import TinyDB, Query
 
 import config
 import subject_channels
@@ -65,99 +66,115 @@ Course section snapshot schema:
 }
 
 Last update time schema:
-{
+"_default": {
     last_update_time: int
     last_update_loop: int
 }
 """
 
 # # Update interval in seconds
-# trend_snapshot_interval = 900
+trend_snapshot_interval = 900
 
-# # Prepare enrollment stats database
+# Prepare enrollment stats database
 # trend_client = pymongo.MongoClient("mongodb://localhost:27017/")
 # trend_db = trend_client[f"tabtrend{semester_code}"]  # Each semester a database
+trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Formatted for testing and debugging
+# trend_db = TinyDB(f'tabtrend{semester_code}.json')
 
-# # Check if last_update_time exists in current semester's database
-# # If no, the database is empty
-# # Create last_update_time collection with last_update_time and last_update_loop document
-# # Document has value 0 to trigger an update immediately
-# def get_trend_update_time(loop=False):
-#     update_time_target = "last_update_loop" if loop else "last_update_time"
+# Extract field from list of documents
+def get_field_data(field_name, documents):
+    field = [r[field_name] for r in documents]
+    return field
 
-#     update_time_col = trend_db["last_update_time"]
-#     time_query = { "last_update_time": {"$exists": "true"} }
-#     last_update_time = update_time_col.find_one(time_query)
+# Check if last_update_time exists in current semester's database
+# If no, the database is empty
+# Create last_update_time collection with last_update_time and last_update_loop document
+# Document has value 0 to trigger an update immediately
+def get_trend_update_time(loop=False):
+    update_time_target = "last_update_loop" if loop else "last_update_time"
 
-#     if last_update_time:
-#         return last_update_time[update_time_target]
-#     else:
-#         update_time_col.insert_one(
-#             { 
-#                 "last_update_time": 0, 
-#                 "last_update_loop": 0 
-#             }
-#         )
-#         return update_time_col.find_one(time_query)[update_time_target]  # Raise error if database is still empty
+    # Query last update time
+    time_query = Query()
+    last_update_time = trend_db.get(time_query.last_update_time.exists())
+    # update_time_col = trend_db["last_update_time"]
+    # time_query = { "last_update_time": {"$exists": "true"} }
+    # last_update_time = update_time_col.find_one(time_query)
 
-# # Create a snapshot of all sections
-# def create_trend_snapshot():
-#     quotas = open_quotas()
-#     if not check_quotas_validity():
-#         return False
+    if last_update_time:
+        return last_update_time[update_time_target]
+    else:
+        trend_db.insert(
+            { 
+                "last_update_time": 0, 
+                "last_update_loop": 0 
+            }
+        )
+        # return update_time_col.find_one(time_query)[update_time_target]  # Raise error if database is still empty
+        return trend_db.get(time_query.last_update_time.exists())[update_time_target]
+
+# Create a snapshot of all sections
+def create_trend_snapshot():
+    quotas = open_quotas()
+    if not check_quotas_validity():
+        return False
     
-#     this_update_loop = get_trend_update_time(True) + 1
+    this_update_loop = get_trend_update_time(True) + 1
 
-#     for course_code, course_data in quotas.items():
-#         # Skip time entry
-#         if course_code == "time":
-#             continue
+    for course_code, course_data in quotas.items():
+        # Skip time entry
+        if course_code == "time":
+            continue
 
-#         for section_code, section_data in course_data['sections'].items():
-#             # Check for reserved quotas
-#             reserved_quotas_list = []
-#             total_quota = section_data[5].split("\n")
-#             if len(total_quota) >= 3:
-#                 for k in range(2, len(total_quota)):
-#                     reserved_quotas = total_quota[k].split(": ")
-#                     reserved_quotas_dept = [reserved_quotas[0]]
-#                     reserved_quotas_qea = [int(i) for i in reserved_quotas[1].split("/")]
-#                     reserved_quotas_list.append(reserved_quotas_dept + reserved_quotas_qea)
+        for section_code, section_data in course_data['sections'].items():
+            # Check for reserved quotas
+            reserved_quotas_list = []
+            total_quota = section_data[5].split("\n")
+            if len(total_quota) >= 3:
+                for k in range(2, len(total_quota)):
+                    reserved_quotas = total_quota[k].split(": ")
+                    reserved_quotas_dept = [reserved_quotas[0]]
+                    reserved_quotas_qea = [int(i) for i in reserved_quotas[1].split("/")]
+                    reserved_quotas_list.append(reserved_quotas_dept + reserved_quotas_qea)
 
-#             # Create snapshot of the section
-#             section_snapshot = {
-#                 "section_code": trim_section(section_code),
-#                 "class_nbr": trim_class_nbr(section_code),
-#                 "time": quotas['time'],
-#                 "loop": this_update_loop,
-#                 "total": [int(section_data[i].split("\n")[0]) for i in range(5, 9)],
-#                 "reserved": reserved_quotas_list
-#             }
+            # Create snapshot of the section
+            section_snapshot = {
+                "section_code": trim_section(section_code),
+                "class_nbr": trim_class_nbr(section_code),
+                "time": quotas['time'],
+                "loop": this_update_loop,
+                "total": [int(section_data[i].split("\n")[0]) for i in range(5, 9)],
+                "reserved": reserved_quotas_list
+            }
 
-#             # Insert the snapshot into the collection of the course
-#             trend_course_col = trend_db[course_code]
+            # Insert the snapshot into the collection (table) of the course
+            # trend_course_col = trend_db[course_code]
+            trend_course_col = trend_db.table(course_code, cache_size=0)
 
-#             # Compare current snapshot with latest stored version
-#             latest_snapshot_query = { 
-#                 'section_code': section_snapshot['section_code'],
-#                 'total': section_snapshot['total'],
-#                 'reserved': section_snapshot['reserved']
-#             }
-#             latest_stored_snapshot = trend_course_col.find_one(
-#                 latest_snapshot_query,
-#                 sort=[('time', -1)]
-#             )
+            # Compare current snapshot with latest stored version
+            latest_snapshot_query = { 
+                'section_code': section_snapshot['section_code'],
+                'total': section_snapshot['total'],
+                'reserved': section_snapshot['reserved']
+            }
+            # latest_stored_snapshot = trend_course_col.find_one(
+            #     latest_snapshot_query,
+            #     sort=[('time', -1)]
+            # )
+            matching_snapshots = trend_course_col.search(Query().fragment(latest_snapshot_query))
 
-#             # Only insert snapshot if difference is found or no previous snapshot is stored
-#             if (not latest_stored_snapshot):
-#                 snapshot_insert_result = trend_course_col.insert_one(section_snapshot)
+            # Only insert snapshot if difference is found or no previous snapshot is stored
+            # if (not latest_stored_snapshot):
+            if (not matching_snapshots):
+                # snapshot_insert_result = trend_course_col.insert_one(section_snapshot)
+                snapshot_insert_result = trend_course_col.insert(section_snapshot)
 
-#     # Change last updated time of database
-#     update_time_col = trend_db["last_update_time"]
-#     time_query = { "last_update_time": {"$exists": "true"} }
-#     new_update_time = { "$set": { "last_update_time": quotas['time'], "last_update_loop": this_update_loop } }
-#     update_time_col.update_one(time_query, new_update_time)
-#     return True
+    # Change last updated time of database
+    # update_time_col = trend_db["last_update_time"]
+    # time_query = { "last_update_time": {"$exists": "true"} }
+    # new_update_time = { "$set": { "last_update_time": quotas['time'], "last_update_loop": this_update_loop } }
+    # update_time_col.update_one(time_query, new_update_time)
+    trend_db.update({"last_update_time": quotas['time'], "last_update_loop": this_update_loop})
+    return True
 
 # Convert semester string (name) to code
 def semester_string_to_code(semester_string, check=True):
