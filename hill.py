@@ -118,11 +118,18 @@ class QuotaPage(discord.ui.View):
 # "quota" command
 # Lists quotas of all sections of a course
 @bot.tree.command(description="Get quotas of a course!")
-async def quota(interaction: discord.Interaction, course_code: str):
+async def quota(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]):
     await interaction.response.defer(thinking=True)
-
     course_code = course_code.replace(" ", "").upper()
-    embed_quota = get_quota.compose_message(course_code)
+
+    semester = get_quota.semester_string_to_code(semester_name)
+    if not semester_name:  # if semester is empty then check current semester
+        semester = ""
+    elif semester == -1:  # Error: invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
+
+    embed_quota = get_quota.compose_message(course_code, semester=semester)
     
     # Error: Course data unavailable
     if embed_quota == "unavailable":
@@ -135,9 +142,10 @@ async def quota(interaction: discord.Interaction, course_code: str):
         await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
         try:
-            view = QuotaPage(mode="q", course_code=course_code)
+            view = QuotaPage(mode="q", course_code=course_code, semester=semester)
             # Add source button linking to course entry in original course quota website
-            get_quota.add_source_url(view, course_code)
+            if not semester:  # Do not add source button for previous semesters
+                get_quota.add_source_url(view, course_code)
             await interaction.edit_original_response(embed=embed_quota, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
@@ -145,11 +153,18 @@ async def quota(interaction: discord.Interaction, course_code: str):
 # "info" command
 # Shows course info
 @bot.tree.command(description="Get the information about a course!")
-async def info(interaction: discord.Interaction, course_code: str) -> None:
+async def info(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
-
     course_code = course_code.replace(" ", "").upper()
-    embed_info = get_quota.compose_info(course_code.replace(" ", "").upper())
+
+    semester = get_quota.semester_string_to_code(semester_name)
+    if not semester_name:  # if semester is empty then check current semester
+        semester = ""
+    if semester == -1:  # Error: invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
+
+    embed_info = get_quota.compose_info(course_code, semester=semester)
 
     # Error: Course data unavailable
     if embed_info == "unavailable":
@@ -159,12 +174,13 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
         await interaction.edit_original_response(content="⚠️ Check your course code!")
     else:
         try:
-            view = QuotaPage(mode="i", course_code=course_code)
+            view = QuotaPage(mode="i", course_code=course_code, semester=semester)
             # Clear page buttons if no course requires/excludes it
             if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
                 view.clear_items()
             # Add source and reviews button
-            get_quota.add_source_url(view, course_code)
+            if not semester:  # Do not add source button for previous semesters
+                get_quota.add_source_url(view, course_code)
             get_quota.add_space_url(view, course_code)
 
             await interaction.edit_original_response(embed=embed_info, view=view)
@@ -174,11 +190,18 @@ async def info(interaction: discord.Interaction, course_code: str) -> None:
 # "sections" command
 # Lists sections of a course and their times, venues and instructors
 @bot.tree.command(description="Get sections of a course!")
-async def sections(interaction: discord.Interaction, course_code: str) -> None:
+async def sections(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
-
     course_code = course_code.replace(" ", "").upper()
-    embed_sections = get_quota.compose_sections(course_code)
+
+    semester = get_quota.semester_string_to_code(semester_name)
+    if not semester_name:  # if semester is empty then check current semester
+        semester = ""
+    if semester == -1:  # Error: invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
+
+    embed_sections = get_quota.compose_sections(course_code, semester=semester)
 
     # Error: Course data unavailable
     if embed_sections == "unavailable":
@@ -191,9 +214,10 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
         await interaction.edit_original_response(content="⚠️ This course has no sections!")
     else:
         try:
-            view = QuotaPage(mode="s", course_code=course_code)
+            view = QuotaPage(mode="s", course_code=course_code, semester=semester)
             # Add source button linking to course entry in original course quota website
-            get_quota.add_source_url(view, course_code)
+            if not semester:
+                get_quota.add_source_url(view, course_code)
             await interaction.edit_original_response(embed=embed_sections, view=view)
         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
@@ -201,13 +225,21 @@ async def sections(interaction: discord.Interaction, course_code: str) -> None:
 # "list" command
 # List all courses with given query
 @bot.tree.command(description="Search courses by prefix/instructor/common core area!")
-async def search(interaction: discord.Interaction, query: str) -> None:
+async def search(interaction: discord.Interaction, query: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
-    cc_areas = get_quota.get_cc_areas()
-    instructors = get_quota.get_attribute_list(3) + get_quota.get_attribute_list(4)
+
+    semester = get_quota.semester_string_to_code(semester_name)
+    if not semester_name:  # if semester is empty then check current semester
+        semester = ""
+    if semester == -1:  # Error: invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
+
+    cc_areas = get_quota.get_cc_areas(semester)
+    instructors = get_quota.get_attribute_list(3, semester) + get_quota.get_attribute_list(4, semester)
 
     # Submit query to search function
-    embed_list = get_quota.compose_list(query)
+    embed_list = get_quota.compose_list(query, semester=semester)
 
     # Error: Course data unavailable
     if embed_list == "unavailable":
@@ -216,13 +248,14 @@ async def search(interaction: discord.Interaction, query: str) -> None:
     elif embed_list == "key":
         await interaction.edit_original_response(content="⚠️ No courses found!")
     else:
-        view = QuotaPage(mode="l", course_code=query)
+        view = QuotaPage(mode="l", course_code=query, semester=semester)
         # Add source button linking to course entry in original course quota website
         # Only add source URL for prefix and instructor searches
-        if query in instructors:
-            get_quota.add_source_url(view, query, "i")
-        elif query not in cc_areas + instructors:
-            get_quota.add_source_url(view, query, "l")
+        if not semester:
+            if query in instructors:
+                get_quota.add_source_url(view, query, "i")
+            elif query not in cc_areas + instructors:
+                get_quota.add_source_url(view, query, "l")
         await interaction.edit_original_response(embed=embed_list, view=view)
 
 # "graph" command (hidden until hardware incompatibility resolved! 2/3)
@@ -252,133 +285,133 @@ async def graph(interaction: discord.Interaction, course_code: str, section: str
         await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
 
 # "history" command group start
-history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
+# history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
 
 # "history quota" command
 # Shows quotas of a course in a previous semester
-@history_group.command(name="quota", description="Get quotas of a course in a previous semester!")
-async def history_quota(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-    await interaction.response.defer(thinking=True)
-    course_code = course_code.replace(" ", "").upper()
+# @history_group.command(name="quota", description="Get quotas of a course in a previous semester!")
+# async def history_quota(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
+#     await interaction.response.defer(thinking=True)
+#     course_code = course_code.replace(" ", "").upper()
 
-    semester = get_quota.semester_string_to_code(semester_string)
-    if semester == -1:  # Error: invalid semester
-        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-        return
+#     semester = get_quota.semester_string_to_code(semester_string)
+#     if semester == -1:  # Error: invalid semester
+#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+#         return
 
-    embed_quota = get_quota.compose_message(course_code, semester=semester)
+#     embed_quota = get_quota.compose_message(course_code, semester=semester)
 
-    # Error: Course data unavailable
-    if embed_quota == "unavailable":
-        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-    # Error: Invalid course code
-    elif embed_quota == "key":
-        await interaction.edit_original_response(content="⚠️ Check your course code!")
-    # Error: Course has no sections (unlikely)
-    elif embed_quota == "no_sections":
-        await interaction.edit_original_response(content="⚠️ This course has no sections!")
-    else:
-        try:
-            view = QuotaPage(mode="q", course_code=course_code, semester=semester)
-            await interaction.edit_original_response(embed=embed_quota, view=view)
-        except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
-            await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
+#     # Error: Course data unavailable
+#     if embed_quota == "unavailable":
+#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+#     # Error: Invalid course code
+#     elif embed_quota == "key":
+#         await interaction.edit_original_response(content="⚠️ Check your course code!")
+#     # Error: Course has no sections (unlikely)
+#     elif embed_quota == "no_sections":
+#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
+#     else:
+#         try:
+#             view = QuotaPage(mode="q", course_code=course_code, semester=semester)
+#             await interaction.edit_original_response(embed=embed_quota, view=view)
+#         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
+#             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
 
 # "history sections" command
 # Shows sections of a course and their schedules in a previous semester
-@history_group.command(name="sections", description="Get sections of a course in a previous semester!")
-async def history_sections(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-    await interaction.response.defer(thinking=True)
-    course_code = course_code.replace(" ", "").upper()
+# @history_group.command(name="sections", description="Get sections of a course in a previous semester!")
+# async def history_sections(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
+#     await interaction.response.defer(thinking=True)
+#     course_code = course_code.replace(" ", "").upper()
 
-    semester = get_quota.semester_string_to_code(semester_string)
-    if semester == -1:  # Error: invalid semester
-        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-        return
+#     semester = get_quota.semester_string_to_code(semester_string)
+#     if semester == -1:  # Error: invalid semester
+#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+#         return
     
-    embed_sections = get_quota.compose_sections(course_code, semester=semester)
+#     embed_sections = get_quota.compose_sections(course_code, semester=semester)
 
-    # Error: Course data unavailable
-    if embed_sections == "unavailable":
-        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-    # Error: Invalid course code
-    elif embed_sections == "key":
-        await interaction.edit_original_response(content="⚠️ Check your course code!")
-    # Error: Course has no sections (unlikely)
-    elif embed_sections == "no_sections":
-        await interaction.edit_original_response(content="⚠️ This course has no sections!")
-    else:
-        try:
-            view = QuotaPage(mode="s", course_code=course_code, semester=semester)
-            await interaction.edit_original_response(embed=embed_sections, view=view)
-        except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
-            await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
+#     # Error: Course data unavailable
+#     if embed_sections == "unavailable":
+#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+#     # Error: Invalid course code
+#     elif embed_sections == "key":
+#         await interaction.edit_original_response(content="⚠️ Check your course code!")
+#     # Error: Course has no sections (unlikely)
+#     elif embed_sections == "no_sections":
+#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
+#     else:
+#         try:
+#             view = QuotaPage(mode="s", course_code=course_code, semester=semester)
+#             await interaction.edit_original_response(embed=embed_sections, view=view)
+#         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
+#             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
 
 # "history info" command
 # Shows course info in a previous semester
-@history_group.command(name="info", description="Get the information about a course in a previous semester!")
-async def history_info(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-    await interaction.response.defer(thinking=True)
-    course_code = course_code.replace(" ", "").upper()
+# @history_group.command(name="info", description="Get the information about a course in a previous semester!")
+# async def history_info(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
+#     await interaction.response.defer(thinking=True)
+#     course_code = course_code.replace(" ", "").upper()
 
-    semester = get_quota.semester_string_to_code(semester_string)
-    if semester == -1:  # Error: invalid semester
-        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-        return
+#     semester = get_quota.semester_string_to_code(semester_string)
+#     if semester == -1:  # Error: invalid semester
+#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+#         return
     
-    embed_info = get_quota.compose_info(course_code, semester=semester)
+#     embed_info = get_quota.compose_info(course_code, semester=semester)
 
-    # Error: Course data unavailable
-    if embed_info == "unavailable":
-        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-    # Error: Invalid course code
-    elif embed_info == "key":
-        await interaction.edit_original_response(content="⚠️ Check your course code!")
-    # Error: Course has no sections (unlikely)
-    elif embed_info == "no_sections":
-        await interaction.edit_original_response(content="⚠️ This course has no sections!")
-    else:
-        try:
-            view = QuotaPage(mode="i", course_code=course_code, semester=semester)
-            # Clear page buttons if no course requires/excludes it
-            if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
-                view.clear_items()
-            # Add reviews button
-            get_quota.add_space_url(view, course_code)
+#     # Error: Course data unavailable
+#     if embed_info == "unavailable":
+#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+#     # Error: Invalid course code
+#     elif embed_info == "key":
+#         await interaction.edit_original_response(content="⚠️ Check your course code!")
+#     # Error: Course has no sections (unlikely)
+#     elif embed_info == "no_sections":
+#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
+#     else:
+#         try:
+#             view = QuotaPage(mode="i", course_code=course_code, semester=semester)
+#             # Clear page buttons if no course requires/excludes it
+#             if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
+#                 view.clear_items()
+#             # Add reviews button
+#             get_quota.add_space_url(view, course_code)
 
-            await interaction.edit_original_response(embed=embed_info, view=view)
-        except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
-            await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
+#             await interaction.edit_original_response(embed=embed_info, view=view)
+#         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
+#             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
 
 # "history search" command
 # Lists all courses with given query in previous semester
-@history_group.command(name="search", description="Search courses in a previous semester by prefix/instructor/common core area!")
-async def history_search(interaction: discord.Interaction, query: str, semester_string: str) -> None:
-    await interaction.response.defer(thinking=True)
+# @history_group.command(name="search", description="Search courses in a previous semester by prefix/instructor/common core area!")
+# async def history_search(interaction: discord.Interaction, query: str, semester_string: str) -> None:
+#     await interaction.response.defer(thinking=True)
 
-    semester = get_quota.semester_string_to_code(semester_string)
-    if semester == -1:  # Error: invalid semester
-        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-        return
+#     semester = get_quota.semester_string_to_code(semester_string)
+#     if semester == -1:  # Error: invalid semester
+#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+#         return
 
-    cc_areas = get_quota.get_cc_areas(semester)
-    instructors = get_quota.get_attribute_list(3, semester) + get_quota.get_attribute_list(4, semester)
+#     cc_areas = get_quota.get_cc_areas(semester)
+#     instructors = get_quota.get_attribute_list(3, semester) + get_quota.get_attribute_list(4, semester)
 
-    # Submit query to search function
-    embed_list = get_quota.compose_list(query, semester=semester)
+#     # Submit query to search function
+#     embed_list = get_quota.compose_list(query, semester=semester)
 
-    # Error: Course data unavailable
-    if embed_list == "unavailable":
-        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-    # Error: invalid query
-    elif embed_list == "key":
-        await interaction.edit_original_response(content="⚠️ No courses found!")
-    else:
-        view = QuotaPage(mode="l", course_code=query, semester=semester)
-        await interaction.edit_original_response(embed=embed_list, view=view)
+#     # Error: Course data unavailable
+#     if embed_list == "unavailable":
+#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+#     # Error: invalid query
+#     elif embed_list == "key":
+#         await interaction.edit_original_response(content="⚠️ No courses found!")
+#     else:
+#         view = QuotaPage(mode="l", course_code=query, semester=semester)
+#         await interaction.edit_original_response(embed=embed_list, view=view)
 
 # Add command group to command tree
-bot.tree.add_command(history_group)
+# bot.tree.add_command(history_group)
 
 # "history" command group end
 
@@ -478,10 +511,10 @@ async def about(interaction: discord.Interaction) -> None:
     except:
         await interaction.edit_original_response(content="⚠️ Error displaying about page!")
     
-# Autocomplete for "quota", "info", "sections", "graph", "sub sub" command
-@quota.autocomplete('course_code')
-@info.autocomplete('course_code')
-@sections.autocomplete('course_code')
+# Autocomplete current semester course codes
+# @quota.autocomplete('course_code')
+# @info.autocomplete('course_code')
+# @sections.autocomplete('course_code')
 @graph.autocomplete('course_code')  # hidden until hardware incompatibility resolved! 3/3
 @sub.autocomplete('course_code')
 async def sections_autocomplete(
@@ -514,10 +547,13 @@ async def section_param_autocomplete(
     
     return data
 
-# Autocomplete for `course_code` of "history" command group
-@history_quota.autocomplete('course_code')
-@history_sections.autocomplete('course_code')
-@history_info.autocomplete('course_code')
+# Autocomplete all semesters course codes
+# @history_quota.autocomplete('course_code')
+# @history_sections.autocomplete('course_code')
+# @history_info.autocomplete('course_code')
+@quota.autocomplete('course_code')
+@info.autocomplete('course_code')
+@sections.autocomplete('course_code')
 async def history_course_code_autocomplete(
     interaction: discord.Interaction,
     current: str
@@ -525,8 +561,9 @@ async def history_course_code_autocomplete(
     semester_list = get_quota.find_historical_data()
 
     courses = []
-    for s in semester_list:
+    for s in semester_list:  # Get previous semesters
         courses += get_quota.get_course_list(s)
+    courses += get_quota.get_course_list()  # Get current semester
     courses = sorted(list(dict.fromkeys(courses)))  # Remove duplicates
 
     data = [app_commands.Choice(name=course, value=course)
@@ -535,11 +572,15 @@ async def history_course_code_autocomplete(
     
     return data
 
-# Autocomplete for `semester_string` of "history" command group
-@history_quota.autocomplete('semester_string')
-@history_sections.autocomplete('semester_string')
-@history_info.autocomplete('semester_string')
-@history_search.autocomplete('semester_string')
+# Autocomplete for `semester_name`
+# @history_quota.autocomplete('semester_string')
+# @history_sections.autocomplete('semester_string')
+# @history_info.autocomplete('semester_string')
+# @history_search.autocomplete('semester_string')
+@quota.autocomplete('semester_name')
+@info.autocomplete('semester_name')
+@sections.autocomplete('semester_name')
+@search.autocomplete('semester_name')
 async def history_semester_string_autocomplete(
     interaction: discord.Interaction,
     current: str
@@ -570,8 +611,8 @@ async def unsub_autocomplete(
     ][0: 25]
     return data
 
-# Autocomplete for "search" command
-@search.autocomplete('query')
+# Get query from current semester
+# @search.autocomplete('query')
 async def search_autocomplete(
     interaction: discord.Interaction,
     current: str
@@ -590,15 +631,18 @@ async def search_autocomplete(
     return data
 
 # Autocomplete for `query` of "history search" command group
-@history_search.autocomplete('query')
+# Get query from all semesters
+# @history_search.autocomplete('query')
+@search.autocomplete('query')
 async def history_query_autocomplete(
     interaction: discord.Interaction,
     current: str
 ) -> typing.List[app_commands.Choice[str]]:
     semester_list = get_quota.find_historical_data()
+    semester_list.append("")  # Include current semester
 
     queries = []
-    for s in semester_list:
+    for s in semester_list:  # Previous semesters + current semester
         queries.extend(get_quota.get_prefix_list(s))
         queries.extend(get_quota.get_attribute_list(3, s) + get_quota.get_attribute_list(4, s))
         queries.extend(get_quota.get_cc_areas(s))
