@@ -50,17 +50,18 @@ def compose_plot(course_code: str, section: str, page=0):
     section_snapshots = sorted(course_col.search(Query().fragment(section_query)), key=lambda k: k['time'])
 
     # Add intermediate data points at 1 interval before recorded change if needed
-    for i in range(1, len(section_snapshots)):
-        if section_snapshots[i]["loop"] - section_snapshots[i - 1]["loop"] > 1:
+    for i in section_snapshots:
+        i_idx = section_snapshots.index(i)
+        if section_snapshots[i_idx]["loop"] - section_snapshots[i_idx - 1]["loop"] > 1:
             section_snapshots.insert(
-                i,
+                i_idx,
                 {
                     "section_code": section,
-                    "class_nbr": section_snapshots[i]["class_nbr"],
-                    "time": section_snapshots[i]["time"] - get_quota.trend_snapshot_interval,
-                    "loop": section_snapshots[i]["loop"] - 1,
-                    "total": section_snapshots[i - 1]["total"],  # Should have the same quotas as the last snapshot before recorded change
-                    "reserved": section_snapshots[i - 1]["reserved"]
+                    "class_nbr": section_snapshots[i_idx]["class_nbr"],
+                    "time": section_snapshots[i_idx]["time"] - get_quota.trend_snapshot_interval,
+                    "loop": section_snapshots[i_idx]["loop"] - 1,
+                    "total": section_snapshots[i_idx - 1]["total"],  # Should have the same quotas as the last snapshot before recorded change
+                    "reserved": section_snapshots[i_idx - 1]["reserved"]
                 }
             )
     
@@ -76,7 +77,7 @@ def compose_plot(course_code: str, section: str, page=0):
                 "reserved": section_snapshots[-1]["reserved"]
             }
         )
-    
+
     # (Total) Format data into lines
     time_xpoints = np.array([get_quota.time_from_stamp(d.get('time', 0)) for d in section_snapshots])
     total_quota_ypoints = np.array([d.get('total', [0, 0, 0, 0])[0] for d in section_snapshots])
