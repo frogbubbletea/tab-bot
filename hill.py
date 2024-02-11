@@ -587,6 +587,18 @@ async def history_semester_string_autocomplete(
 ) -> typing.List[app_commands.Choice[str]]:
     semester_list = get_quota.find_historical_data()
 
+    # Filter available semesters using the input query (course code or search query)
+    if interaction.namespace.course_code:
+        semester_list = [s for s in semester_list if interaction.namespace.course_code in get_quota.get_course_list(s)]
+    elif interaction.namespace.query:
+        semester_list = [s for s in semester_list if interaction.namespace.query in 
+                           get_quota.get_prefix_list(s) 
+                         + get_quota.get_attribute_list(3, s) 
+                         + get_quota.get_attribute_list(4, s) 
+                         + get_quota.get_cc_areas(s)]
+    else:
+        semester_list = []
+
     # Convert filename into semester names
     semester_list = [get_quota.semester_code_to_string(int(s)) for s in semester_list]
 
