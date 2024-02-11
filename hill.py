@@ -118,6 +118,8 @@ class QuotaPage(discord.ui.View):
 # "quota" command
 # Lists quotas of all sections of a course
 @bot.tree.command(description="Get quotas of a course!")
+@app_commands.describe(course_code="Course code")
+@app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
 async def quota(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]):
     await interaction.response.defer(thinking=True)
     course_code = course_code.replace(" ", "").upper()
@@ -153,6 +155,8 @@ async def quota(interaction: discord.Interaction, course_code: str, semester_nam
 # "info" command
 # Shows course info
 @bot.tree.command(description="Get the information about a course!")
+@app_commands.describe(course_code="Course code")
+@app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
 async def info(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
     course_code = course_code.replace(" ", "").upper()
@@ -190,6 +194,8 @@ async def info(interaction: discord.Interaction, course_code: str, semester_name
 # "sections" command
 # Lists sections of a course and their times, venues and instructors
 @bot.tree.command(description="Get sections of a course!")
+@app_commands.describe(course_code="Course code")
+@app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
 async def sections(interaction: discord.Interaction, course_code: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
     course_code = course_code.replace(" ", "").upper()
@@ -225,6 +231,8 @@ async def sections(interaction: discord.Interaction, course_code: str, semester_
 # "list" command
 # List all courses with given query
 @bot.tree.command(description="Search courses by prefix/instructor/common core area!")
+@app_commands.describe(query="Course code prefix/instructor/common core area")
+@app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
 async def search(interaction: discord.Interaction, query: str, semester_name: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -261,6 +269,8 @@ async def search(interaction: discord.Interaction, query: str, semester_name: ty
 # "graph" command (hidden until hardware incompatibility resolved! 2/3)
 # Plot the enrollment statistics of a section over time
 @bot.tree.command(description="Plot the enrollment statistics of a section over time!")
+@app_commands.describe(course_code="Course code")
+@app_commands.describe(section="Name of the section")
 async def graph(interaction: discord.Interaction, course_code: str, section: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -421,6 +431,7 @@ subscribe_group = app_commands.Group(name="sub", description="Manage your course
 
 # "sub sub" command
 @subscribe_group.command(description="Subscribe to a course! You'll be notified of its changes via DM.")
+@app_commands.describe(course_code="Course code")
 async def sub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -446,6 +457,7 @@ async def sub(interaction: discord.Interaction, course_code: str) -> None:
 
 # "sub unsub" command
 @subscribe_group.command(description="Unsubscribe from a course!")
+@app_commands.describe(course_code="Course code")
 async def unsub(interaction: discord.Interaction, course_code: str) -> None:
     await interaction.response.defer(thinking=True)
 
@@ -670,6 +682,7 @@ async def history_query_autocomplete(
 # Upload bot and quota status to Discord for remote debug
 # Only available in test server
 @bot.tree.command(description="Upload bot and quota status for debug!", guild=discord.Object(test_server_id))
+@app_commands.describe(file="Name of the file to upload")
 async def debug(interaction: discord.Interaction, file: str) -> None:
     await interaction.response.defer(thinking=True)
 
