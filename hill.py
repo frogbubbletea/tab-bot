@@ -494,6 +494,26 @@ async def sections_autocomplete(
             ][0: 25]
     return data
 
+# Autocomplete for `section` of "graph" command
+@graph.autocomplete('section')
+async def section_param_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    data = []  # Return empty list if inputted course code doesn't match anything
+    course_input = interaction.namespace.course_code  # Get current value in course_code field
+
+    if course_input in get_quota.trend_db.tables():  # Prevent creation of tables
+        course_table = get_quota.trend_db.table(course_input)
+        all_sections = course_table.all()
+        all_sections = get_quota.get_field_data("section_code", all_sections)  # Extract section code
+        all_sections = list(dict.fromkeys(all_sections))  # Remove duplicates
+        data = [app_commands.Choice(name=section, value=section)
+                for section in all_sections if current.replace(" ", "").upper() in section.upper()
+                ][0: 25]
+    
+    return data
+
 # Autocomplete for `course_code` of "history" command group
 @history_quota.autocomplete('course_code')
 @history_sections.autocomplete('course_code')
