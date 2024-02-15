@@ -44,7 +44,8 @@ def compose_plot(course_code: str, section: str, page=0):
 
     # Find all snapshots of specified section
     # course_col = get_quota.trend_db[course_code]
-    course_col = get_quota.trend_db.table(course_code, cache_size=0)
+    trend_db = TinyDB(f'tabtrend{get_quota.semester_code}.json', indent=4)  # Get database on demand to prevent outdated data
+    course_col = trend_db.table(course_code, cache_size=0)
     section_query = { "section_code": section }
     # section_snapshots = list(course_col.find(section_query, sort=[('time', 1)]))
     section_snapshots = sorted(course_col.search(Query().fragment(section_query)), key=lambda k: k['time'])

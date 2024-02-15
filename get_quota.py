@@ -78,7 +78,7 @@ trend_snapshot_interval = 900
 # Prepare enrollment stats database
 # trend_client = pymongo.MongoClient("mongodb://localhost:27017/")
 # trend_db = trend_client[f"tabtrend{semester_code}"]  # Each semester a database
-trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Formatted for testing and debugging
+# trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Formatted for testing and debugging
 # trend_db = TinyDB(f'tabtrend{semester_code}.json')
 
 # Extract field from list of documents
@@ -91,6 +91,7 @@ def get_field_data(field_name, documents):
 # Create last_update_time collection with last_update_time and last_update_loop document
 # Document has value 0 to trigger an update immediately
 def get_trend_update_time(loop=False):
+    trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Get database on demand to prevent outdated data
     update_time_target = "last_update_loop" if loop else "last_update_time"
 
     # Query last update time
@@ -119,6 +120,8 @@ def create_trend_snapshot():
         return False
     
     this_update_loop = get_trend_update_time(True) + 1
+
+    trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Get database on demand to prevent outdated data
 
     for course_code, course_data in quotas.items():
         # Skip time entry
