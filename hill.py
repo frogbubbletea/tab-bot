@@ -552,7 +552,7 @@ async def section_param_autocomplete(
     course_input = interaction.namespace.course_code  # Get current value in course_code field
 
     if course_input in trend_db.tables():  # Prevent creation of tables
-        course_table = trend_db.table(course_input)
+        course_table = trend_db.table(course_input, cache_size=0)
         all_sections = course_table.all()
         all_sections = get_quota.get_field_data("section_code", all_sections)  # Extract section code
         all_sections = list(dict.fromkeys(all_sections))  # Remove duplicates
