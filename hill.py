@@ -552,6 +552,15 @@ async def about(interaction: discord.Interaction) -> None:
 
     try:
         view = QuotaPage(mode="a")
+        view.clear_items()
+        view.add_item(
+            discord.ui.Button(
+                label="Inspect my insides!",
+                style=discord.ButtonStyle.link,
+                emoji='🐙',
+                url="https://github.com/succsuccsucc/tab-bot"
+            )
+        )
         await interaction.edit_original_response(embed=embed_about, view=view)
     except:
         await interaction.edit_original_response(content="⚠️ Error displaying about page!")

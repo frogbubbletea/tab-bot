@@ -1322,7 +1322,7 @@ def compose_about(guild_count, page=0):
     # Base components of the embed
     about_titles = ["Info and Stats", "Commands Usage"]  # Page 1, all other pages
     about_descs = [
-        "HKUST Class Schedule & Quota, right here on Discord!\nLook up and subscribe to courses with my commands!\nRead on to learn how to use them.", 
+        "HKUST Class Schedule & Quota, right here on Discord!\nLook up and subscribe to courses with my commands!", 
         ""
     ]
     embed_about = discord.Embed(
@@ -1331,7 +1331,7 @@ def compose_about(guild_count, page=0):
         color=config.color_info
     )
     embed_about.set_author(name="🍊 About Hill!")
-    embed_about.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}")
+    # embed_about.set_footer(text=f"📄 Page {page + 1} of {max_page + 1}")
 
     # Page 1 components
     if page == 0:
