@@ -10,6 +10,7 @@ import os
 from dotenv import load_dotenv
 import typing
 import re
+from datetime import datetime
 
 import get_quota
 import plot_quota  # v3.0 features are hidden until hardware incompatibility is resolved! 1/3
@@ -64,12 +65,13 @@ async def on_guild_join(guild):
 # Slash commands start
 # Compose page flip buttons for all commands
 class QuotaPage(discord.ui.View):
-    def __init__(self, *, timeout=180, mode="q", course_code="", page=0, semester=""):
+    def __init__(self, *, timeout=180, mode="q", course_code="", page=0, semester="", room=""):
         super().__init__(timeout=timeout)
         self.mode = mode
         self.course_code = course_code
         self.page = page
         self.semester = semester
+        self.room = room
 
     @discord.ui.button(label="Previous page", style=discord.ButtonStyle.gray, emoji="⬅️")
     async def previous_button(self,interaction:discord.Interaction, button:discord.ui.Button):
@@ -83,7 +85,9 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page - 1, self.semester)
         elif self.mode == "a":
             embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page - 1)
-
+        elif self.mode == "r":
+            embed_quota_pageflip = get_quota.compose_room_schedule(self.room, self.page - 1)
+        
         if embed_quota_pageflip == "p0":
             await interaction.response.send_message("🚫 You're already at the first page!", ephemeral=True)
         else:
@@ -106,6 +110,8 @@ class QuotaPage(discord.ui.View):
             embed_quota_pageflip = get_quota.compose_list(self.course_code, self.page + 1, self.semester)
         elif self.mode == "a":
             embed_quota_pageflip = get_quota.compose_about(len(bot.guilds), self.page + 1)
+        elif self.mode == "r":
+            embed_quota_pageflip = get_quota.compose_room_schedule(self.room, self.page + 1)
 
         if embed_quota_pageflip == "pmax":
             await interaction.response.send_message("🚫 You're already at the last page!", ephemeral=True)
@@ -295,6 +301,31 @@ async def graph(interaction: discord.Interaction, course_code: str, section: str
         # Add source button
         get_quota.add_source_url(view, course_code)
         await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
+
+# "room" command group start
+room_group = app_commands.Group(name="room", description="Get the schedule of a room!")
+
+# "room schedule" command
+# Shows the status of a room right now and its schedule this week
+@room_group.command(name="schedule", description="Get the class schedule of a room right now and this week!")
+@app_commands.describe(room="Room number")
+async def room_schedule(interaction: discord.Interaction, room: str) -> None:
+    await interaction.response.defer(thinking=True)
+
+    embed_room_schedule = get_quota.compose_room_schedule(room)
+
+    # Error: Course data unavailable
+    if embed_room_schedule == "unavailable":
+        await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
+    # Error: invalid room code
+    elif embed_room_schedule == "key":
+        await interaction.edit_original_response(content="⚠️ Check your room code!")
+    else:
+        view = QuotaPage(mode="r", room=room)
+        await interaction.edit_original_response(embed=embed_room_schedule, view=view)
+
+# "room" command group end
+bot.tree.add_command(room_group)
 
 # "history" command group start
 # history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
@@ -678,6 +709,20 @@ async def history_query_autocomplete(
     data = [
         app_commands.Choice(name=query, value=query)
         for query in queries if current.replace(" ", "").upper() in query.replace(" ", "").upper()
+    ][0: 25]
+    return data
+
+# Autocomplete for `room` of "room schedule" command
+# Get list of rooms
+@room_schedule.autocomplete('room')
+async def room_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    rooms = get_quota.get_attribute_list(2)
+    data = [
+        app_commands.Choice(name=room, value=room)
+        for room in rooms if current.replace(" ", "").upper() in room.replace(" ", "").upper()
     ][0: 25]
     return data
 

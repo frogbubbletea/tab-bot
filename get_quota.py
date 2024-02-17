@@ -6,7 +6,7 @@ import discord
 
 import os
 import json
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 import re
 import traceback
 import itertools
@@ -51,6 +51,10 @@ sem_emoji_dict = {
     30: "🌿",
     40: "🌊"
 }
+
+# List of weekdays in Class Schedule & Quota format
+weekday_list = ["Mo", "Tu", "We", "Th", "Fr", "Sa", "Su"]
+full_weekday_list = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
 
 """
 Each semester a database, each course a collection (hidden until hardware incompatibility resolved! 2/2)
@@ -248,6 +252,34 @@ def time_from_stamp(stamp):
     time_object = datetime.fromtimestamp(stamp, timezone.utc)
     return time_object
 
+# Convert Class Schedule & Quota format time to time objects
+def times_from_website_format(time_string):
+    time_string = time_string.split(" ")  # Remove weekdays and separators
+    time_begin = datetime.strptime(time_string[1], "%I:%M%p").time()  # Start time
+    time_end = datetime.strptime(time_string[3], "%I:%M%p").time()  # End time
+    
+    return time_begin, time_end
+
+# Convert Class Schedule & Quota format date range to time objects
+def dates_from_website_format(dates_string):
+    dates_string = dates_string.split(" ")  # Remove separators
+    date_begin = datetime.strptime(dates_string[0], "%d-%b-%Y").date()
+    date_end = datetime.strptime(dates_string[2], "%d-%b-%Y").date()
+
+    return date_begin, date_end
+
+# Find the nearest day from today given weekday
+def date_from_weekday(weekday):
+    today = date.today()
+    today_weekday = today.weekday()
+    nearest_date = today + timedelta(days=weekday - today_weekday)
+
+    # Return next weekday if weekday smaller than today
+    if nearest_date < today:
+        nearest_date += timedelta(days=7)
+    
+    return nearest_date
+
 # Find additions and removals between two lists
 def list_diffs(temp1, temp2):
     additions = [x for x in temp1 if x not in set(temp2)]  # Elements in temp1 not in temp2
@@ -393,6 +425,13 @@ def get_attributes_from_course(attribute: int, course: dict):
     attributes = list(course['sections'].values())
     attributes = [x for a in attributes for x in a[attribute].split("\n")]
     attributes = list(dict.fromkeys(attributes))  # Remove duplicates
+    attributes = [a for a in attributes if a != ""]  # Remove empty elements
+
+    return attributes
+
+# Get list of a section attribute in a section
+def get_attributes_from_section(attribute: int, section: list):
+    attributes = [x for x in section[attribute].split("\n\n\n")]
     attributes = [a for a in attributes if a != ""]  # Remove empty elements
 
     return attributes
@@ -1057,6 +1096,129 @@ def compose_list(prefix, page=0, semester=""):
     embed_list.set_author(name=list_header)
 
     return embed_list
+
+# Compose room schedule for "room_schedule" command
+def compose_room_schedule(room, page=0):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return "unavailable"
+    
+    # Remove update time entry
+    quota_time = quotas["time"]
+    quotas.pop("time")
+    
+    # Check if room code is valid: TBA is not valid
+    rooms = get_attribute_list(2)
+    if room not in rooms or room == "TBA":
+        return "key"
+    
+    original_page = page
+    page = (page + datetime.now().weekday()) % 7  # Set page number to number of days from today
+    max_page = 6  # Weekdays range from 1 (sunday) to 7 (saturday)
+
+    # Check if page number is valid
+    if original_page < 0:
+        return "p0"
+    elif original_page > max_page:
+        return "pmax"
+    
+    # Store if room is having class right now
+    is_class_now = False
+
+    # Get one page (day) of data
+    room_sections = []
+    for course_code, course in quotas.items():
+        for section_title, section_list in course.get("sections", {}).items():
+            sect_room_list = get_attributes_from_section(2, section_list)
+            sect_time_list = get_attributes_from_section(1, section_list)
+
+            for i in range(len(sect_time_list)):
+                # Check if class takes place in parameter room, ignore TBA time
+                if sect_time_list[i] == "TBA" or sect_room_list[i] != room: 
+                    continue
+
+                # Check date
+                sect_time_lines = sect_time_list[i].split("\n")
+                if len(sect_time_lines) > 1:
+                    sect_date = sect_time_lines[0]
+                    sect_date_begin, sect_date_end = dates_from_website_format(sect_date)
+                    if not (sect_date_begin <= date_from_weekday(page) <= sect_date_end):
+                        continue
+                
+                # Check time
+                sect_time = sect_time_lines[-1]
+                sect_weekdays = re.findall("..", sect_time.split(" ")[0])
+                # Add to page if the section has class on the day
+                if weekday_list[page] in sect_weekdays:
+                    room_sections.append(
+                        {
+                            "title": course['title'],
+                            "code": course_code[0: 4] + " " + course_code[4: ],
+                            "section": section_title,
+                            "time": sect_time_list[i]
+                        }
+                    )
+                    # Check if class is happening right now
+                    sect_begin, sect_end = times_from_website_format(sect_time)
+                    is_class_now += sect_begin <= datetime.now().time() <= sect_end
+
+    # Sort the schedule by time
+    room_sections = sorted(room_sections, key=lambda d: times_from_website_format(d['time'].split("\n")[-1])[0])
+
+    # Prepare room status message (only for current day)
+    room_schedule_description = ""
+    if page == datetime.now().weekday():
+        if is_class_now:
+            room_schedule_description = "ℹ️ This room is having a class!"
+        else:
+            room_schedule_description = "ℹ️ This room is free right now!"
+
+    # Prepare embed
+    embed_room_schedule = discord.Embed(
+        title = room,
+        description = room_schedule_description,
+        color = config.color_success,
+        timestamp = time_from_stamp(quota_time)
+    )
+    embed_room_schedule.set_author(name="🍊 Class schedule of")
+
+    # Compose room timetable for the day
+    room_schedule = "```"
+
+    if len(room_sections) > 0:
+        room_schedule += "ansi\n"
+
+    for section in room_sections:
+        section_time_lines = section['time'].split("\n")
+
+        sect_times = times_from_website_format(section_time_lines[-1])
+        sect_times = [t.strftime("%H:%M") for t in sect_times]
+        room_schedule += "\u001b[1m" + f"> {' - '.join(sect_times)}" + "\u001b[0m"
+        
+        if len(section_time_lines) > 1:
+            room_schedule += f" ({section_time_lines[0]})"
+        
+        room_schedule += ":\n"
+
+        room_schedule += f"{section['title']}: {section['section']}\n\n"
+    
+    room_schedule += "\n```"
+
+    # Add timetable to the embed
+    # Prepare field name
+    room_schedule_name = "Today" if page == datetime.today().weekday() else f"This {full_weekday_list[page]}"
+    # Add the field
+    embed_room_schedule.add_field(
+        name=f"🍊 {room_schedule_name}'s schedule",
+        value=room_schedule,
+        inline=False
+    )
+    
+    embed_room_schedule.set_footer(text=f"📄 {datetime.strftime(date_from_weekday(page), '%A, %Y/%m/%d')}\n🕒 Last updated")
+
+    return embed_room_schedule
 
 # Functions and variables for "about" command start
 command_list = [
