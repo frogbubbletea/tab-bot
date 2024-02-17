@@ -1097,6 +1097,58 @@ def compose_list(prefix, page=0, semester=""):
 
     return embed_list
 
+# Get class schedule of a room on a day
+def get_room_sections(room, weekday):
+    quotas = open_quotas()
+
+    # Check if quotas file is available
+    if not check_quotas_validity():
+        return
+
+    # Remove update time entry
+    quota_time = quotas["time"]
+    quotas.pop("time")
+    
+    is_class_now = False  # Store if room is having class right now
+    room_sections = []
+
+    for course_code, course in quotas.items():
+        for section_title, section_list in course.get("sections", {}).items():
+            sect_room_list = get_attributes_from_section(2, section_list)
+            sect_time_list = get_attributes_from_section(1, section_list)
+
+            for i in range(len(sect_time_list)):
+                # Check if class takes place in parameter room, ignore TBA time
+                if sect_time_list[i] == "TBA" or sect_room_list[i] != room: 
+                    continue
+
+                # Check date
+                sect_time_lines = sect_time_list[i].split("\n")
+                if len(sect_time_lines) > 1:
+                    sect_date = sect_time_lines[0]
+                    sect_date_begin, sect_date_end = dates_from_website_format(sect_date)
+                    if not (sect_date_begin <= date_from_weekday(weekday) <= sect_date_end):
+                        continue
+                
+                # Check time
+                sect_time = sect_time_lines[-1]
+                sect_weekdays = re.findall("..", sect_time.split(" ")[0])
+                # Add to page if the section has class on the day
+                if weekday_list[weekday] in sect_weekdays:
+                    room_sections.append(
+                        {
+                            "title": course['title'],
+                            "code": course_code[0: 4] + " " + course_code[4: ],
+                            "section": section_title,
+                            "time": sect_time_list[i]
+                        }
+                    )
+                    # Check if class is happening right now
+                    sect_begin, sect_end = times_from_website_format(sect_time)
+                    is_class_now += sect_begin <= datetime.now().time() <= sect_end
+    
+    return is_class_now, room_sections
+
 # Compose room schedule for "room_schedule" command
 def compose_room_schedule(room, page=0):
     quotas = open_quotas()
@@ -1124,45 +1176,47 @@ def compose_room_schedule(room, page=0):
     elif original_page > max_page:
         return "pmax"
     
-    # Store if room is having class right now
-    is_class_now = False
+    # # Store if room is having class right now
+    # is_class_now = False
 
-    # Get one page (day) of data
-    room_sections = []
-    for course_code, course in quotas.items():
-        for section_title, section_list in course.get("sections", {}).items():
-            sect_room_list = get_attributes_from_section(2, section_list)
-            sect_time_list = get_attributes_from_section(1, section_list)
+    # # Get one page (day) of data
+    # room_sections = []
+    # for course_code, course in quotas.items():
+    #     for section_title, section_list in course.get("sections", {}).items():
+    #         sect_room_list = get_attributes_from_section(2, section_list)
+    #         sect_time_list = get_attributes_from_section(1, section_list)
 
-            for i in range(len(sect_time_list)):
-                # Check if class takes place in parameter room, ignore TBA time
-                if sect_time_list[i] == "TBA" or sect_room_list[i] != room: 
-                    continue
+    #         for i in range(len(sect_time_list)):
+    #             # Check if class takes place in parameter room, ignore TBA time
+    #             if sect_time_list[i] == "TBA" or sect_room_list[i] != room: 
+    #                 continue
 
-                # Check date
-                sect_time_lines = sect_time_list[i].split("\n")
-                if len(sect_time_lines) > 1:
-                    sect_date = sect_time_lines[0]
-                    sect_date_begin, sect_date_end = dates_from_website_format(sect_date)
-                    if not (sect_date_begin <= date_from_weekday(page) <= sect_date_end):
-                        continue
+    #             # Check date
+    #             sect_time_lines = sect_time_list[i].split("\n")
+    #             if len(sect_time_lines) > 1:
+    #                 sect_date = sect_time_lines[0]
+    #                 sect_date_begin, sect_date_end = dates_from_website_format(sect_date)
+    #                 if not (sect_date_begin <= date_from_weekday(page) <= sect_date_end):
+    #                     continue
                 
-                # Check time
-                sect_time = sect_time_lines[-1]
-                sect_weekdays = re.findall("..", sect_time.split(" ")[0])
-                # Add to page if the section has class on the day
-                if weekday_list[page] in sect_weekdays:
-                    room_sections.append(
-                        {
-                            "title": course['title'],
-                            "code": course_code[0: 4] + " " + course_code[4: ],
-                            "section": section_title,
-                            "time": sect_time_list[i]
-                        }
-                    )
-                    # Check if class is happening right now
-                    sect_begin, sect_end = times_from_website_format(sect_time)
-                    is_class_now += sect_begin <= datetime.now().time() <= sect_end
+    #             # Check time
+    #             sect_time = sect_time_lines[-1]
+    #             sect_weekdays = re.findall("..", sect_time.split(" ")[0])
+    #             # Add to page if the section has class on the day
+    #             if weekday_list[page] in sect_weekdays:
+    #                 room_sections.append(
+    #                     {
+    #                         "title": course['title'],
+    #                         "code": course_code[0: 4] + " " + course_code[4: ],
+    #                         "section": section_title,
+    #                         "time": sect_time_list[i]
+    #                     }
+    #                 )
+    #                 # Check if class is happening right now
+    #                 sect_begin, sect_end = times_from_website_format(sect_time)
+    #                 is_class_now += sect_begin <= datetime.now().time() <= sect_end
+
+    is_class_now, room_sections = get_room_sections(room, page)
 
     # Sort the schedule by time
     room_sections = sorted(room_sections, key=lambda d: times_from_website_format(d['time'].split("\n")[-1])[0])
