@@ -279,7 +279,7 @@ async def search(interaction: discord.Interaction, query: str, semester_name: ty
 @bot.tree.command(description="Plot the enrollment statistics of a section over time!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(section="Name of the section")
-async def graph(interaction: discord.Interaction, course_code: str, section: str) -> None:
+async def graph(interaction: discord.Interaction, course_code: str, section: str, semester: str) -> None:
     await interaction.response.defer(thinking=True)
 
     course_code = course_code.replace(" ", "").upper()
