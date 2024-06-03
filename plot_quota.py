@@ -77,8 +77,8 @@ def compose_plot(course_code: str, section: str, page=0, sem=""):
             {
                 "section_code": section,
                 "class_nbr": section_snapshots[-1]["class_nbr"],
-                "time": get_quota.get_trend_update_time(),
-                "loop": get_quota.get_trend_update_time(True),
+                "time": get_quota.get_trend_update_time(sem=sem),
+                "loop": get_quota.get_trend_update_time(True, sem=sem),
                 "total": section_snapshots[-1]["total"],  # Should have the same quotas as the last snapshot before recorded change
                 "reserved": section_snapshots[-1]["reserved"]
             }
