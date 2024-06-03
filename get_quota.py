@@ -94,8 +94,11 @@ def get_field_data(field_name, documents):
 # If no, the database is empty
 # Create last_update_time collection with last_update_time and last_update_loop document
 # Document has value 0 to trigger an update immediately
-def get_trend_update_time(loop=False):
-    trend_db = TinyDB(f'tabtrend{semester_code}.json', indent=4)  # Get database on demand to prevent outdated data
+def get_trend_update_time(loop=False, sem=""):
+    if sem == "":
+        sem = semester_code
+
+    trend_db = TinyDB(f'tabtrend{sem}.json', indent=4)  # Get database on demand to prevent outdated data
     update_time_target = "last_update_loop" if loop else "last_update_time"
 
     # Query last update time

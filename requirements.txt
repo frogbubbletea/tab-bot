@@ -90,7 +90,7 @@ python-dateutil==2.8.2
 python-dotenv==1.0.0
 python-editor==1.0.4
 python-multipart==0.0.6
-pytun-pmd3==1.0.0
+
 pyusb==1.2.1
 PyYAML==6.0.1
 qh3==0.14.0
@@ -112,7 +112,7 @@ typing_extensions==4.9.0
 ujson==5.9.0
 urllib3==1.26.15
 uvicorn==0.27.0
-uvloop==0.19.0
+
 watchfiles==0.21.0
 wcwidth==0.2.13
 websockets==10.4

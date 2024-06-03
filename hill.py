@@ -279,12 +279,21 @@ async def search(interaction: discord.Interaction, query: str, semester_name: ty
 @bot.tree.command(description="Plot the enrollment statistics of a section over time!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(section="Name of the section")
-async def graph(interaction: discord.Interaction, course_code: str, section: str) -> None:
+@app_commands.describe(semester="The semester to look up in. Leave empty for current semester!")
+async def graph(interaction: discord.Interaction, course_code: str, section: str, semester: typing.Optional[str]) -> None:
     await interaction.response.defer(thinking=True)
+
+    # Check for specified semester
+    sem = plot_quota.semester_string_to_code_trend(semester)
+    if not semester:  # Use current semester if not specified
+        sem = ""
+    elif sem == -1:  # Error: Invalid semester
+        await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
+        return
 
     course_code = course_code.replace(" ", "").upper()
     section = section.replace(" ", "").upper()
-    embed_plot, section_plot_image_file = plot_quota.compose_embed_with_plot(course_code, section)
+    embed_plot, section_plot_image_file = plot_quota.compose_embed_with_plot(course_code, section, sem=sem)
 
     # Error: Course data unavailable
     if embed_plot == "unavailable":
@@ -298,8 +307,9 @@ async def graph(interaction: discord.Interaction, course_code: str, section: str
     else:
         view = QuotaPage(mode="p", course_code=course_code)
         view.clear_items()
-        # Add source button
-        get_quota.add_source_url(view, course_code)
+        # Add source button, do not add for past semesters
+        if not sem:
+            get_quota.add_source_url(view, course_code)
         await interaction.edit_original_response(embed=embed_plot, view=view, attachments=[section_plot_image_file])
 
 # "room" command group start
@@ -653,6 +663,22 @@ async def history_semester_string_autocomplete(
                          + get_quota.get_cc_areas(s)]
     else:
         semester_list = []
+
+    # Convert filename into semester names
+    semester_list = [get_quota.semester_code_to_string(int(s)) for s in semester_list]
+
+    data = [app_commands.Choice(name=semester_string, value=semester_string)
+        for semester_string in semester_list if current.replace(" ", "").upper() in semester_string.upper()
+        ][0: 25]
+    return data
+
+# Autocomplete for `semester` in /graph only
+@graph.autocomplete('semester')
+async def graph_history_semester_autocomplete(
+    interaction: discord.Interaction,
+    current: str
+) -> typing.List[app_commands.Choice[str]]:
+    semester_list = plot_quota.find_historical_trends()[1: ]  # Remove current semester
 
     # Convert filename into semester names
     semester_list = [get_quota.semester_code_to_string(int(s)) for s in semester_list]

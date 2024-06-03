@@ -6,6 +6,8 @@ import io
 import base64
 import datetime
 from zoneinfo import ZoneInfo
+import os
+import re
 
 import mplcatppuccin
 from mplcatppuccin.palette import load_color
@@ -36,7 +38,10 @@ axis_line_color = load_color("latte", "text")
 # Get default fig size to enlarge for reserved quota subplots
 figsize = plt.rcParams.get('figure.figsize')
 
-def compose_plot(course_code: str, section: str, page=0):
+def compose_plot(course_code: str, section: str, page=0, sem=""):
+    if sem == "":
+        sem = get_quota.semester_code
+
     # Displaying placeholder plot for now
     # fig, ax = plt.subplots()
     # ax.plot([0, 1, 2, 3], [1, 2, 3, 4])
@@ -44,7 +49,7 @@ def compose_plot(course_code: str, section: str, page=0):
 
     # Find all snapshots of specified section
     # course_col = get_quota.trend_db[course_code]
-    trend_db = TinyDB(f'tabtrend{get_quota.semester_code}.json', indent=4)  # Get database on demand to prevent outdated data
+    trend_db = TinyDB(f'tabtrend{sem}.json', indent=4)  # Get database on demand to prevent outdated data
     course_col = trend_db.table(course_code, cache_size=0)
     section_query = { "section_code": section }
     # section_snapshots = list(course_col.find(section_query, sort=[('time', 1)]))
@@ -201,15 +206,15 @@ def compose_plot(course_code: str, section: str, page=0):
     # Finish
     return fig
 
-def compose_embed_with_plot(course_code: str, section: str, page=0):
+def compose_embed_with_plot(course_code: str, section: str, page=0, sem=""):
     # Placeholder course code and section code
     # course_title = "COMP 4521 - Mobile Application Development (3 units)"
     # section_name = "L1 (2131)"
 
-    quotas = get_quota.open_quotas()
+    quotas = get_quota.open_quotas(sem)
 
     # Check if quotas file is available
-    if not get_quota.check_quotas_validity():
+    if not get_quota.check_quotas_validity(sem):
         return "unavailable", None
     
     # Check if course code is valid
@@ -233,19 +238,25 @@ def compose_embed_with_plot(course_code: str, section: str, page=0):
     # Get the full section code from the input
     section_name = list(course_dict["sections"].keys())[section_idx]
 
+    # Use alternate color and heading for historical semesters
+    graph_color = config.color_success if sem == "" else config.color_history
+    graph_heading = "🍊 Enrollment graph of"
+    if (sem != ""):
+        graph_heading = f"🗓️ {get_quota.semester_code_to_string(sem)}\n" + graph_heading
+
     # Compose embed containing the plot
     embed_plot = discord.Embed(
         title=f"{course_title}: {section_name}",
-        color=config.color_success,
-        timestamp=get_quota.time_from_stamp(get_quota.get_trend_update_time())
+        color=graph_color,
+        timestamp=get_quota.time_from_stamp(get_quota.get_trend_update_time(sem=sem))
     )
 
     # Set heading and footer
-    embed_plot.set_author(name="🍊 Enrollment graph of")
+    embed_plot.set_author(name=graph_heading)
     embed_plot.set_footer(text="🕒 Last updated")
 
     # Plot the section's statistics
-    section_plot_fig = compose_plot(course_code, section)
+    section_plot_fig = compose_plot(course_code, section, sem=sem)
     section_plot_stringIObytes = io.BytesIO()
 
     # Export image of plot to discord
@@ -256,4 +267,50 @@ def compose_embed_with_plot(course_code: str, section: str, page=0):
     embed_plot.set_image(url="attachment://section_plot.png")
 
     return embed_plot, section_plot_image_file
+
+def semester_string_to_code_trend(semester_string: str) -> int:
+    """
+    Convert semester string (name) to its code.
+    Checks if trend is recorded for the semester.
+
+    Parameters
+    -----------
+    semester_string: :class:`str`
+        The input string to check.
     
+    Returns
+    --------
+    :class:`int`
+        The corresponding semester code, or -1 if the input is invalid or not recorded.
+    """
+
+    try:
+        year = semester_string[2: 4]
+        sem = semester_string[8: ]
+
+        sem_code = str(get_quota.sem_dict[sem])
+
+        semester_result = year + sem_code
+        
+        if semester_result not in find_historical_trends():
+            return -1
+        return int(semester_result)
+    except:
+        return -1
+
+def find_historical_trends() -> list[str]:
+    """
+    Get a list of all semesters with trend recorded in bot's directory.
+
+    Returns
+    --------
+    :class:`list[str]`
+        List of semesters sorted in descending chronological order.
+    """
+
+    semester_list = os.listdir()
+    history_files_regex = re.compile("tabtrend\d{4}\.json")
+    semester_list = list(filter(history_files_regex.match, semester_list))
+    semester_list = [s[8: 12] for s in semester_list]
+
+    return sorted(semester_list, reverse=True)
