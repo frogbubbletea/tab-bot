@@ -2488,7 +2488,7 @@ async def download_quotas(bot, current_loop):
 
         soup = bs4.BeautifulSoup(page.content, "html.parser")
     
-        letters = soup.select('.depts')[0]
+        letters = soup.select('.depts > #subjectItems > a')
     except Exception as error:  # Failed to connect to server!
         # Print exception to console
         traceback.print_exc()
@@ -2522,7 +2522,7 @@ async def download_quotas(bot, current_loop):
             try:
                 course_dict = {}
 
-                course_title = course.find("h2").get_text()
+                course_title = course.select(".courseinfo > .courseattrContainer > .subject")[0].get_text()
             
                 course_code = course.select(".courseanchor > a")[0]["name"]
             except:
@@ -2530,7 +2530,7 @@ async def download_quotas(bot, current_loop):
             
             # No more course info im lazy
             # Course info start
-            course_info = course.select(".courseinfo > .courseattr.popup > .popupdetail > table")[0]
+            course_info = course.select(".courseinfo > .courseattr > .popupdetail > table")[0]
             course_info_rows = course_info.select('tr')
 
             info_dict = {}
@@ -2558,20 +2558,40 @@ async def download_quotas(bot, current_loop):
 
             section_dict = {}
             course_sections = course.select(".sections")[0]
-            course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd"])
+            course_sections = course_sections.find_all("tr", ["newsect secteven", "newsect sectodd", "secteven", "sectodd", "newsect secteven mainRow", "secteven otherRow", "newsect sectodd mainRow", "sectodd otherRow"])
 
             for idx, section in enumerate(course_sections):
                 # Append extra section times/instructor information to section entry (1/2)
-                if section['class'][0] in ["secteven", "sectodd"]:
+                if section['class'][0] in ["secteven", "sectodd", "secteven otherRow", "sectodd otherRow"]:
                     continue
 
                 section_data = section.select("td")
                 section_cols = []
-                for col in section_data:
-                    section_cols.append(
-                        col.get_text("\n")
-                        .replace("\n>> Show more", "")  # Exclude "show more" button from the website (1/2)
-                    )
+                for idx3, col in enumerate(section_data):
+                    # Instructors and TAs
+                    if col.select('.instructorList') != []:  # Instructors
+                        inst_list = [inst.get_text() for inst in col.select('.instructorList > a')]
+                        if inst_list == []:  # If instructor is TBA
+                            inst_list = [ins.get_text() for ins in col.select('.instructorList')]
+                        section_cols.append("\n".join(inst_list))
+                    elif col.select('.taListContainer > .taList') != []:  # TAs
+                        ta_list = [ta.get_text() for ta in col.select('.taListContainer > .taList > a')]
+                        section_cols.append("\n".join(ta_list))
+                    # Remarks
+                    elif idx3 == 9:
+                        if col.get_text("\n") == "":
+                            section_cols.append("\u00a0")
+                        else:
+                            section_cols.append(
+                            col.get_text("\n")
+                            .replace("\n>> Show more", "")  # Exclude "show more" button from the website (1/2)
+                        )
+                    # The rest
+                    else:
+                        section_cols.append(
+                            col.get_text("\n")
+                            .replace("\n>> Show more", "")  # Exclude "show more" button from the website (1/2)
+                        )
                 
                 # Append extra section times/instructor information to section entry (2/2)
                 # try:
@@ -2588,13 +2608,27 @@ async def download_quotas(bot, current_loop):
 
                 try:
                     next = 1
-                    while course_sections[idx + next]['class'][0] in ["secteven", "sectodd"]:
+                    while course_sections[idx + next]['class'][0] in ["secteven", "sectodd", "secteven otherRow", "sectodd otherRow"]:
                         next_section = course_sections[idx + next]
-                        if next_section['class'][0] in ["secteven", "sectodd"]:
+                        if next_section['class'][0] in ["secteven", "sectodd", "secteven otherRow", "sectodd otherRow"]:
                             extra_data = next_section.select("td")
 
                             for idx2, datum in enumerate(extra_data):
-                                section_dict[section_cols[0]][idx2 + 1] += "\n\n\n" + datum.get_text("\n").replace("\n>> Show more", "")  # Exclude "show more" button from the website (2/2)
+                                # Instructors and TAs
+                                if datum.select('.instructorList') != []:  # Instructors
+                                    inst_list = [inst.get_text() for inst in datum.select('.instructorList > a')]
+                                    if inst_list == []:  # If instructor is TBA
+                                        inst_list = [ins.get_text() for ins in datum.select('.instructorList')]
+                                    section_dict[section_cols[0]][idx2] += "\n\n\n" + "\n".join(inst_list)
+                                elif datum.select('.taListContainer > .taList') != []:  # TAs
+                                    ta_list = [ta.get_text() for ta in datum.select('.taListContainer > .taList > a')]
+                                    section_dict[section_cols[0]][idx2] += "\n\n\n" + "\n".join(ta_list)
+                                # TAs (empty)
+                                if idx2 == 4 and datum.get_text("\n") == "":
+                                    section_dict[section_cols[0]][idx2] += "\n\n\n"
+                                # The rest
+                                elif datum.get_text("\n") != "":
+                                    section_dict[section_cols[0]][idx2] += "\n\n\n" + datum.get_text("\n").replace("\n>> Show more", "")  # Exclude "show more" button from the website (2/2)
                         
                         next += 1
                 except IndexError:
