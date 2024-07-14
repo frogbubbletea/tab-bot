@@ -1657,6 +1657,10 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
     if (not check_quotas_validity()) or (old_quotas == {}) or ('time' not in new_quotas):
         return
     
+    # No comparison if current quotas file is empty
+    if list(new_quotas.keys()) == ['time']:
+        return
+    
     changed = False
     for key, value in new_quotas.items():
         # Skip 'time' entry
