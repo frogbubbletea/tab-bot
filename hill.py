@@ -125,6 +125,7 @@ class QuotaPage(discord.ui.View):
 
 # "quota" command
 # Lists quotas of all sections of a course
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Get quotas of a course!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
@@ -162,6 +163,7 @@ async def quota(interaction: discord.Interaction, course_code: str, semester_nam
 
 # "info" command
 # Shows course info
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Get the information about a course!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
@@ -201,6 +203,7 @@ async def info(interaction: discord.Interaction, course_code: str, semester_name
 
 # "sections" command
 # Lists sections of a course and their times, venues and instructors
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Get sections of a course!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
@@ -238,6 +241,7 @@ async def sections(interaction: discord.Interaction, course_code: str, semester_
 
 # "list" command
 # List all courses with given query
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Search courses by prefix/instructor/common core area!")
 @app_commands.describe(query="Course code prefix/instructor/common core area")
 @app_commands.describe(semester_name="The semester to look up in. Leave empty for current semester!")
@@ -276,6 +280,7 @@ async def search(interaction: discord.Interaction, query: str, semester_name: ty
 
 # "graph" command (hidden until hardware incompatibility resolved! 2/3)
 # Plot the enrollment statistics of a section over time
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Plot the enrollment statistics of a section over time!")
 @app_commands.describe(course_code="Course code")
 @app_commands.describe(section="Name of the section")
@@ -336,137 +341,6 @@ async def room_schedule(interaction: discord.Interaction, room: str) -> None:
 
 # "room" command group end
 bot.tree.add_command(room_group)
-
-# "history" command group start
-# history_group = app_commands.Group(name="history", description="Get course data from a previous semester!")
-
-# "history quota" command
-# Shows quotas of a course in a previous semester
-# @history_group.command(name="quota", description="Get quotas of a course in a previous semester!")
-# async def history_quota(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-#     await interaction.response.defer(thinking=True)
-#     course_code = course_code.replace(" ", "").upper()
-
-#     semester = get_quota.semester_string_to_code(semester_string)
-#     if semester == -1:  # Error: invalid semester
-#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-#         return
-
-#     embed_quota = get_quota.compose_message(course_code, semester=semester)
-
-#     # Error: Course data unavailable
-#     if embed_quota == "unavailable":
-#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-#     # Error: Invalid course code
-#     elif embed_quota == "key":
-#         await interaction.edit_original_response(content="⚠️ Check your course code!")
-#     # Error: Course has no sections (unlikely)
-#     elif embed_quota == "no_sections":
-#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
-#     else:
-#         try:
-#             view = QuotaPage(mode="q", course_code=course_code, semester=semester)
-#             await interaction.edit_original_response(embed=embed_quota, view=view)
-#         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
-#             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, the sections field is limited to 1024 characters long.\nThis translates to around 15 sections.")
-
-# "history sections" command
-# Shows sections of a course and their schedules in a previous semester
-# @history_group.command(name="sections", description="Get sections of a course in a previous semester!")
-# async def history_sections(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-#     await interaction.response.defer(thinking=True)
-#     course_code = course_code.replace(" ", "").upper()
-
-#     semester = get_quota.semester_string_to_code(semester_string)
-#     if semester == -1:  # Error: invalid semester
-#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-#         return
-    
-#     embed_sections = get_quota.compose_sections(course_code, semester=semester)
-
-#     # Error: Course data unavailable
-#     if embed_sections == "unavailable":
-#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-#     # Error: Invalid course code
-#     elif embed_sections == "key":
-#         await interaction.edit_original_response(content="⚠️ Check your course code!")
-#     # Error: Course has no sections (unlikely)
-#     elif embed_sections == "no_sections":
-#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
-#     else:
-#         try:
-#             view = QuotaPage(mode="s", course_code=course_code, semester=semester)
-#             await interaction.edit_original_response(embed=embed_sections, view=view)
-#         except:  # Deprecated: large numbers of sections should be displayed correctly with pagination
-#             await interaction.edit_original_response(content="⚠️ This course has too many sections!\nDue to a Discord limitation, courses with more than 25 sections cannot be displayed.")
-
-# "history info" command
-# Shows course info in a previous semester
-# @history_group.command(name="info", description="Get the information about a course in a previous semester!")
-# async def history_info(interaction: discord.Interaction, course_code: str, semester_string: str) -> None:
-#     await interaction.response.defer(thinking=True)
-#     course_code = course_code.replace(" ", "").upper()
-
-#     semester = get_quota.semester_string_to_code(semester_string)
-#     if semester == -1:  # Error: invalid semester
-#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-#         return
-    
-#     embed_info = get_quota.compose_info(course_code, semester=semester)
-
-#     # Error: Course data unavailable
-#     if embed_info == "unavailable":
-#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-#     # Error: Invalid course code
-#     elif embed_info == "key":
-#         await interaction.edit_original_response(content="⚠️ Check your course code!")
-#     # Error: Course has no sections (unlikely)
-#     elif embed_info == "no_sections":
-#         await interaction.edit_original_response(content="⚠️ This course has no sections!")
-#     else:
-#         try:
-#             view = QuotaPage(mode="i", course_code=course_code, semester=semester)
-#             # Clear page buttons if no course requires/excludes it
-#             if not (get_quota.get_required_by_courses(course_code, "p") + get_quota.get_required_by_courses(course_code, "e")):
-#                 view.clear_items()
-#             # Add reviews button
-#             get_quota.add_space_url(view, course_code)
-
-#             await interaction.edit_original_response(embed=embed_info, view=view)
-#         except:  # Deprecated: long course info text should be displayed correctly by splitting into multiple fields
-#             await interaction.edit_original_response(content="⚠️ Course info too long!\nDue to a Discord limitation, course info is limited to 1024 characters long.")
-
-# "history search" command
-# Lists all courses with given query in previous semester
-# @history_group.command(name="search", description="Search courses in a previous semester by prefix/instructor/common core area!")
-# async def history_search(interaction: discord.Interaction, query: str, semester_string: str) -> None:
-#     await interaction.response.defer(thinking=True)
-
-#     semester = get_quota.semester_string_to_code(semester_string)
-#     if semester == -1:  # Error: invalid semester
-#         await interaction.edit_original_response(content="⚠️ Invalid semester! Pick a semester from the autocomplete menu.")
-#         return
-
-#     cc_areas = get_quota.get_cc_areas(semester)
-#     instructors = get_quota.get_attribute_list(3, semester) + get_quota.get_attribute_list(4, semester)
-
-#     # Submit query to search function
-#     embed_list = get_quota.compose_list(query, semester=semester)
-
-#     # Error: Course data unavailable
-#     if embed_list == "unavailable":
-#         await interaction.edit_original_response(embed=get_quota.embed_quota_unavailable)
-#     # Error: invalid query
-#     elif embed_list == "key":
-#         await interaction.edit_original_response(content="⚠️ No courses found!")
-#     else:
-#         view = QuotaPage(mode="l", course_code=query, semester=semester)
-#         await interaction.edit_original_response(embed=embed_list, view=view)
-
-# Add command group to command tree
-# bot.tree.add_command(history_group)
-
-# "history" command group end
 
 # "sub" command group
 # List subscribed courses, subscribe to a course, unsubscribe from a course
@@ -553,6 +427,7 @@ bot.tree.add_command(subscribe_group)
 
 # "about" command
 # Show info about the bot
+@app_commands.allowed_installs(guilds=True, users=True)
 @bot.tree.command(description="Show info about the bot!")
 async def about(interaction: discord.Interaction) -> None:
     await interaction.response.defer(thinking=True)
@@ -613,9 +488,6 @@ async def section_param_autocomplete(
     return data
 
 # Autocomplete all semesters course codes
-# @history_quota.autocomplete('course_code')
-# @history_sections.autocomplete('course_code')
-# @history_info.autocomplete('course_code')
 @quota.autocomplete('course_code')
 @info.autocomplete('course_code')
 @sections.autocomplete('course_code')
@@ -638,10 +510,6 @@ async def history_course_code_autocomplete(
     return data
 
 # Autocomplete for `semester_name`
-# @history_quota.autocomplete('semester_string')
-# @history_sections.autocomplete('semester_string')
-# @history_info.autocomplete('semester_string')
-# @history_search.autocomplete('semester_string')
 @quota.autocomplete('semester_name')
 @info.autocomplete('semester_name')
 @sections.autocomplete('semester_name')
