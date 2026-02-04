@@ -1651,6 +1651,7 @@ async def check_diffs(bot, new_quotas=None, old_quotas=None):
             old_quotas = json.load(old_quotas)
         except:
             print("Old quotas file corrupted! Restart the bot.")
+            await channels['error'].send('❌ Old quotas file corrupted! Restart the bot now!')
             return
 
     # No comparison if current quotas file or last quotas file is corrupted
