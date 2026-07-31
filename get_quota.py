@@ -32,7 +32,7 @@ os.chdir(dname)
 # Winter: 20
 # Spring: 30
 # Summer: 40
-semester_code = 2540  # 25-26 Summer
+semester_code = 2610  # 26-27 Fall
 
 # Timezone of HKUST
 hkust_time_zone = "Asia/Hong_Kong"
